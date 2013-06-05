@@ -1,0 +1,10 @@
+/build
+/lib
+!extern/lib/*
+doc/
+*.exe
+*.elf
+*.idb
+*.ilk
+*.pdb
+*.bcl
