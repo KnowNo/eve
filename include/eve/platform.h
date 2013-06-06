@@ -33,13 +33,29 @@
 
 #if defined( EVE_STATIC_LIB ) || !defined( EVE_WINDOWS )
 #   // Static libraries and linux compilers don't have the dllexport/import mechanism.
-#  define _eve_export
+#  define eve_dllexport
 #else
 #  if defined( EVE_NONCLIENT_BUILD )
-#    define _eve_export __declspec( dllexport )
+#    define eve_dllexport __declspec( dllexport )
 #  else
-#    define _eve_export __declspec( dllimport )
+#    define eve_dllexport __declspec( dllimport )
 #  endif
 # endif
+
+namespace eve
+{
+
+//// INT TYPES DEFINITIONS
+typedef char i8;
+typedef unsigned char u8;
+typedef short i16;
+typedef unsigned short u16;
+typedef int i32;
+typedef unsigned int u32;
+typedef long long i64;
+typedef unsigned long long u64;
+typedef u32 size;
+
+} // eve
 
 /** }@ */

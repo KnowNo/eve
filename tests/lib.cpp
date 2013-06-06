@@ -28,7 +28,10 @@
 #include <gtest/gtest.h>
 #include <eve/debug.h>
 
-TEST(Lib, Debug)
+TEST(Lib, debug)
 {
   eve_assert(2 > 1);
+
+  eve_internal_error;
 }
+

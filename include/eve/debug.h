@@ -31,7 +31,8 @@
 #include "platform.h"
 
 #ifndef EVE_RELEASE
-#define eve_assert(condition) if (!(condition)) eve::abort("assertion fail (" #condition ") in file " __FILE__ " at line " S__LINE__ ".")
+
+#define eve_assert(condition) if (!(condition)) eve::abort("Assertion fail (" #condition ") in " eve_file_line ".")
 
 #else
 
@@ -39,13 +40,18 @@
 
 #endif
 
+#define eve_internal_error eve::abort(("Internal error at " eve_file_line "."))
+
 /** \addtogroup Lib
   * @{
   */
+
 namespace eve
 {
 
-/** Printsor shows a fatal error message and aborts execution. */
-_eve_export void abort(const char* message);
+/** Shows a fatal error message and aborts execution. */
+eve_dllexport void abort(const char* message);
 
-} /** }@ */
+} // eve
+
+/** }@ */

@@ -31,8 +31,12 @@
   * @{
   */
 
-#define __eve_stringify(arg) #arg
+  #define __eve_stringify(arg) #arg
+
+/** Turns arg into "arg". */
 #define eve_stringify(arg) __eve_stringify(arg)
-#define S__LINE__ eve_stringify(__LINE__)
+
+/** A string containing file and line. */
+#define eve_file_line "file " __FILE__ " at line " eve_stringify(__LINE__)
 
 /** }@ */
