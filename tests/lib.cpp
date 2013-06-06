@@ -25,10 +25,10 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <UnitTest++.h>
+#include <gtest/gtest.h>
 #include <eve/debug.h>
 
-TEST(Debug)
+TEST(Lib, Debug)
 {
   eve_assert(2 > 1);
 }

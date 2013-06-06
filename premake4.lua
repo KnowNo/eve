@@ -1,6 +1,5 @@
 
 -- Build dependency lists
-local test_deps = { "UnitTest++" }
 local build_deps = function(deps, suffix)
   local d = {}
   for i,v in ipairs(deps) do
@@ -31,7 +30,7 @@ solution "eve"
 
   configuration "windows"
     defines { "EVE_WINDOWS" }
-
+  
   configuration {"windows", "x32"}
     libdirs {"extern/lib/win32", "lib/win32"}
     targetdir "lib/win32"
@@ -85,13 +84,15 @@ solution "eve"
   -- tests
   project "tests"
     kind "ConsoleApp"
-    includedirs { "include", "extern/include/UnitTest++" }
+    includedirs { "include", "extern/include" }
     files { "tests/**.cpp" }
     defines { "EVE_STATIC_LIB" }
+    configuration "vs*"
+      defines { "_VARIADIC_MAX=10" }
     configuration "Debug"
-      links (build_deps(test_deps, "d"))
+      links (build_deps({"gtest", "gtest_main"}, "d"))
     configuration "not Debug"
-      links (build_deps(test_deps, ""))
+      links (build_deps({"gtest", "gtest_main"}, ""))
     configuration "Debug"
       targetname "testsd"
       links {"eved"}
