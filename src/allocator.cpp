@@ -27,57 +27,41 @@
 
 #pragma once
 
-/** \addtogroup Lib
-  * @{
-  */
+#include "eve/allocator.h"
+#include "eve/debug.h"
 
-#if defined( EVE_STATIC_LIB ) || !defined( EVE_WINDOWS )
-#   // Static libraries and linux compilers don't have the dllexport/import mechanism.
-#  define eve_dllexport
+#ifdef EVE_WINDOWS
+#include <Windows.h>
 #else
-#  if defined( EVE_NONCLIENT_BUILD )
-#    define eve_dllexport __declspec( dllexport )
-#  else
-#    define eve_dllexport __declspec( dllimport )
-#  endif
-# endif
-
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
+#include <stdalign.h>
 #endif
 
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::u32)(sizeof(__VA_ARGS__))
-#endif
+using namespace eve;
+using namespace eve::allocator;
 
-namespace eve
+void* heap::allocate(eve::size size, u8 align)
 {
-
-//// INT TYPES DEFINITIONS
-typedef char i8;
-typedef unsigned char u8;
-typedef short i16;
-typedef unsigned short u16;
-typedef int i32;
-typedef unsigned int u32;
-typedef long long i64;
-typedef unsigned long long u64;
-typedef u32 size;
-
-#ifdef EVE_32
-typedef u32 uintptr;
+  eve_assert(size > 0 && align > 0);
+#ifdef EVE_WINDOWS
+  return _aligned_malloc(size, align);
 #else
-typedef u64 uintptr;
+  return aligned_alloc(align, size);
 #endif
+}
 
-static const size size_msb = 1 << 31;
+void heap::deallocate(const void* ptr)
+{
+#ifdef EVE_WINDOWS
+  _aligned_free(const_cast<void*>(ptr));
+#else
+  free(const_cast<void*>(ptr));
+#endif
+}
 
-} // eve
+////////////////////////////////////////////////////////////////////////////////
 
-/** }@ */
+heap& eve::allocator::global()
+{
+  static heap instance;
+  return instance;
+}

@@ -33,10 +33,12 @@
 #ifndef EVE_RELEASE
 
 #define eve_assert(condition) if (!(condition)) eve::abort("Assertion fail (" #condition ") in " eve_file_line ".")
+#define eve_debug_code(...) __VA_ARGS__
 
 #else
 
 #define eve_assert(condition) {}
+#define eve_debug_code(...)
 
 #endif
 

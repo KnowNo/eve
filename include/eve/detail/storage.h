@@ -25,13 +25,18 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/debug.h>
+#pragma once
 
-TEST(Lib, debug)
+#include "../platform.h"
+
+namespace eve { namespace detail
 {
-  eve_assert(2 > 1);
 
-  eve_internal_error;
-}
+template<size k_size, size k_align> struct aligned_storage;
+template<size k_size> struct aligned_storage<k_size, 1> { eve_aligned(1) char data[k_size]; };
+template<size k_size> struct aligned_storage<k_size, 2> { eve_aligned(2) char data[k_size]; };
+template<size k_size> struct aligned_storage<k_size, 4> { eve_aligned(4) char data[k_size]; };
+template<size k_size> struct aligned_storage<k_size, 8> { eve_aligned(8) char data[k_size]; };
+template<size k_size> struct aligned_storage<k_size, 16> { eve_aligned(16) char data[k_size]; };
 
+}} // eve::detail

@@ -39,4 +39,6 @@
 /** A string containing file and line. */
 #define eve_file_line "file " __FILE__ " at line " eve_stringify(__LINE__)
 
+#define eve_max2(a, b) ((a) > (b) ? (a) : (b))
+
 /** }@ */

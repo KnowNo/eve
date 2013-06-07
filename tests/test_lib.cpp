@@ -25,59 +25,63 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#pragma once
+#include <gtest/gtest.h>
+#include <eve/debug.h>
+#include <eve/storage.h>
 
-/** \addtogroup Lib
-  * @{
-  */
-
-#if defined( EVE_STATIC_LIB ) || !defined( EVE_WINDOWS )
-#   // Static libraries and linux compilers don't have the dllexport/import mechanism.
-#  define eve_dllexport
-#else
-#  if defined( EVE_NONCLIENT_BUILD )
-#    define eve_dllexport __declspec( dllexport )
-#  else
-#    define eve_dllexport __declspec( dllimport )
-#  endif
-# endif
-
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
-
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::u32)(sizeof(__VA_ARGS__))
-#endif
-
-namespace eve
+TEST(Lib, debug)
 {
+  eve_assert(2 > 1);
+}
 
-//// INT TYPES DEFINITIONS
-typedef char i8;
-typedef unsigned char u8;
-typedef short i16;
-typedef unsigned short u16;
-typedef int i32;
-typedef unsigned int u32;
-typedef long long i64;
-typedef unsigned long long u64;
-typedef u32 size;
+TEST(Lib, storage)
+{
+  using namespace eve::storage;
 
-#ifdef EVE_32
-typedef u32 uintptr;
-#else
-typedef u64 uintptr;
-#endif
+  fixed<7, 1> data1;
+  
+  (void)data1;
+  EXPECT_EQ(7, sizeof(data1));
 
-static const size size_msb = 1 << 31;
+  fixed<8, 4> data4;
 
-} // eve
+  EXPECT_EQ(0, (eve::u64)&data4 % 4);
+  EXPECT_EQ(8, sizeof(data4));
 
-/** }@ */
+  fixed<32, 16> data16;
+ 
+  EXPECT_EQ(0, (eve::u64)&data16 % 16);
+  EXPECT_EQ(32, sizeof(data16));
+
+  struct Foo
+  {
+    int value;
+    Foo(int val) : value(val) { }
+    ~Foo() { }
+  };
+
+  auto foo = create<Foo>(data16, 42);
+  EXPECT_EQ(42, foo->value);
+  destroy(foo);
+
+  dynamic<1, eve_alignof(Foo)> dynstorage;
+
+  struct Bar
+  {
+    int value;
+    char dummy[100];
+    Bar(int val) : value(val) { }
+    ~Bar() { }
+  };
+
+  auto bar = eve::storage::create<Bar>(dynstorage, 42);
+  EXPECT_EQ(42, bar->value);
+  EXPECT_TRUE(dynstorage.exceeds());
+  eve::storage::destroy(bar);
+}
+
+TEST(Lib, allocator)
+{
+  eve::allocator::heap h;
+  eve::allocator::any a(&h);
+}

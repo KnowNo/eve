@@ -27,57 +27,99 @@
 
 #pragma once
 
+#include "platform.h"
+
 /** \addtogroup Lib
   * @{
   */
 
-#if defined( EVE_STATIC_LIB ) || !defined( EVE_WINDOWS )
-#   // Static libraries and linux compilers don't have the dllexport/import mechanism.
-#  define eve_dllexport
-#else
-#  if defined( EVE_NONCLIENT_BUILD )
-#    define eve_dllexport __declspec( dllexport )
-#  else
-#    define eve_dllexport __declspec( dllimport )
-#  endif
-# endif
+namespace eve { 
 
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
+/** If it is possible to fit size bytes of storage aligned by alignment into the
+ ** buffer pointed to by @p ptr with length @p space, the function sets @p space
+ ** to the total size of object plus bytes used for alignment.
+ ** @returns the first possible address of such aligned storage. If it is
+ ** impossible (i.e. the buffer is too small), align does nothing and returns
+ ** nullptr. */
+inline void* align(eve::size align, eve::size size, void* ptr, eve::size& space)
+{
+  eve::size offset = (eve::size)((eve::uintptr)ptr & (align - 1));
+  
+  if (offset > 0)
+    offset = align - offset;
 
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::u32)(sizeof(__VA_ARGS__))
-#endif
+  if (!ptr || space < offset || space - offset < size)
+    return nullptr;
+  else
+  {
+    ptr = (char*)ptr + offset;
+    space = offset + size;
+    return ptr;
+  }
+}
 
-namespace eve
+////////////////////////////////////////////////////////////////////////////////
+
+ namespace allocator
 {
 
-//// INT TYPES DEFINITIONS
-typedef char i8;
-typedef unsigned char u8;
-typedef short i16;
-typedef unsigned short u16;
-typedef int i32;
-typedef unsigned int u32;
-typedef long long i64;
-typedef unsigned long long u64;
-typedef u32 size;
+class any
+{
+public:
+  template <class tallocator>
+  any(tallocator* allocator)
+    : m_allocator(allocator)
+  {
+    static const calltable s_table = { any::allocate<tallocator>, any::deallocate<tallocator> };
+    m_table = &s_table;
+  }
 
-#ifdef EVE_32
-typedef u32 uintptr;
-#else
-typedef u64 uintptr;
-#endif
+  void* allocate(eve::size size, u8 align)
+  {
+    return m_table->allocate(m_allocator, size, align);
+  }
 
-static const size size_msb = 1 << 31;
+  void  deallocate(const void* ptr)
+  {
+    m_table->deallocate(m_allocator, ptr);
+  }
+  
+private:
+  struct calltable
+  {
+    void* (*allocate)(void*, eve::size, u8);
+    void (*deallocate)(void*, const void*);
+  };
 
-} // eve
+  template<class T>
+  static void* allocate(void* alloc, eve::size size, u8 align)
+  {
+    return static_cast<T*>(alloc)->allocate(size, align);
+  }
+
+  template<class T>
+  static void deallocate(void* alloc, const void* ptr)
+  {
+    static_cast<T*>(alloc)->deallocate(ptr);
+  }
+
+  void* m_allocator;
+  const calltable* m_table;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class heap
+{
+public:
+  void* allocate(eve::size size, u8 align);
+  void  deallocate(const void* ptr);
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+heap& global();
+
+}} // eve::allocator
 
 /** }@ */
