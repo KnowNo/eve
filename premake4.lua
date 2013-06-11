@@ -63,11 +63,11 @@ solution "eve"
     files { "include/eve/**.h", "src/**.h", "src/**.inl", "src/**.cpp" }
     defines { "EVE_STATIC_LIB", "EVE_NONCLIENT_BUILD" }
     configuration {"Debug"}
-      targetname "eved"
+      targetname "evesd"
     configuration {"Optimized"}
-      targetname "eveo"
+      targetname "eveso"
     configuration {"Release"}
-      targetname "eve"
+      targetname "eves"
 
   project "eve_dynamic"
     kind "SharedLib"
@@ -95,10 +95,10 @@ solution "eve"
       links (build_deps({"gtest", "gtest_main"}, ""))
     configuration "Debug"
       targetname "testsd"
-      links {"eved"}
+      links {"evesd"}
     configuration "Optimized"
       targetname "testso"
-      links {"eveo"}
+      links {"eveso"}
     configuration "Release"
       targetname "tests"
-      links {"eve"}
+      links {"eves"}

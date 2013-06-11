@@ -41,7 +41,7 @@ namespace eve {
  ** @returns the first possible address of such aligned storage. If it is
  ** impossible (i.e. the buffer is too small), align does nothing and returns
  ** nullptr. */
-inline void* align(eve::size align, eve::size size, void* ptr, eve::size& space)
+inline eve_dllexport void* align(eve::size align, eve::size size, void* ptr, eve::size& space)
 {
   eve::size offset = (eve::size)((eve::uintptr)ptr & (align - 1));
   
@@ -60,10 +60,10 @@ inline void* align(eve::size align, eve::size size, void* ptr, eve::size& space)
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace allocator
+namespace allocator
 {
 
-class any
+class eve_dllexport any
 {
 public:
   template <class tallocator>
@@ -109,7 +109,7 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class heap
+class eve_dllexport heap
 {
 public:
   void* allocate(eve::size size, u8 align);
@@ -118,7 +118,7 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-heap& global();
+eve_dllexport heap& global();
 
 }} // eve::allocator
 

@@ -8,3 +8,5 @@
 *.ilk
 *.pdb
 *.bcl
+
+/gen-vs2012.bat

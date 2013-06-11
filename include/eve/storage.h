@@ -35,13 +35,13 @@
   * @{
   */
 
-namespace eve { namespace storage
+namespace eve
 {
 
 /** A POD type suitable for use as uninitialized storage for any object whose
  ** size is at most Len and whose alignment requirement is a divisor of Align */
 template<eve::size t_size, eve::size t_align = 8U>
-class fixed
+class fixed_storage
 {
 public:
    /** @returns the size of fixed storage buffer. */
@@ -71,13 +71,13 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 template <eve::size t_size, eve::size t_align = 8U>
-class dynamic
+class dyn_storage
 {
 public:
-  dynamic(const allocator::any& alloc = &eve::allocator::global())
+  dyn_storage(const allocator::any& alloc = &eve::allocator::global())
     : m_allocator(alloc), m_size(k_size) { }
 
-  ~dynamic()
+  ~dyn_storage()
   {
     if (exceeds())
       m_allocator.deallocate(dynptr());
@@ -139,10 +139,12 @@ private:
 
   allocator::any m_allocator;
   eve::size m_size;
-  fixed<k_size, k_align> m_storage;
+  fixed_storage<k_size, k_align> m_storage;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace storage {
 
 template <class T, class Storage, typename... Args>
 T* create(Storage& storage, Args&&... args)
@@ -163,7 +165,8 @@ void destroy(const T* object)
   object->~T();
 }
 
-}} // eve::storage
+} // storage
+} // eve
 
 /** }@ */
 

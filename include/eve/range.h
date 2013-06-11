@@ -25,103 +25,49 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/debug.h>
-#include <eve/storage.h>
-#include <eve/serialization.h>
-#include <fstream>
+#pragma once
 
-TEST(Lib, debug)
+/** \addtogroup Lib
+  * @{
+  */
+
+namespace eve {
+
+template<class T>
+class range
 {
-  eve_assert(2 > 1);
-}
+public:
+  range() { }
+  range(const T& begin, const T& end)
+    : m_begin(begin), m_end(end)
+  { }
 
-TEST(Lib, storage)
+  T begin() const { return m_begin; }
+  T end() const { return m_end; }
+
+private:
+  T m_begin, m_end;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+template<class T>
+class range<T*>
 {
-  eve::fixed_storage<7, 1> data1;
-  
-  (void)data1;
-  EXPECT_EQ(7, sizeof(data1));
+public:
+  range() : m_begin(nullptr), m_end(nullptr) { }
+  range(T* begin, T* end)
+    : m_begin(begin), m_end(end)
+  { }
 
-  eve::fixed_storage<8, 4> data4;
+  T* begin() const { return m_begin; }
+  T* end() const { return m_end; }
 
-  EXPECT_EQ(0, (eve::u64)&data4 % 4);
-  EXPECT_EQ(8, sizeof(data4));
+private:
+  T* m_begin;
+  T* m_end;
+};
 
-  eve::fixed_storage<32, 16> data16;
- 
-  EXPECT_EQ(0, (eve::u64)&data16 % 16);
-  EXPECT_EQ(32, sizeof(data16));
+} // eve
 
-  struct Foo
-  {
-    int value;
-    Foo(int val) : value(val) { }
-    ~Foo() { }
-  };
-
-  auto foo = eve::storage::create<Foo>(data16, 42);
-  EXPECT_EQ(42, foo->value);
-  eve::storage::destroy(foo);
-
-  eve::dyn_storage<1, eve_alignof(Foo)> dynstorage;
-
-  struct Bar
-  {
-    int value;
-    char dummy[100];
-    Bar(int val) : value(val) { }
-    ~Bar() { }
-  };
-
-  auto bar = eve::storage::create<Bar>(dynstorage, 42);
-  EXPECT_EQ(42, bar->value);
-  EXPECT_TRUE(dynstorage.exceeds());
-  eve::storage::destroy(bar);
-}
-
-TEST(Lib, allocator)
-{
-  eve::allocator::heap h;
-  eve::allocator::any a(&h);
-}
-
-TEST(Lib, serialization)
-{
-  struct Boo
-  {
-    int j;
-    
-    eve_serializable(Boo, j);
-  };
-
-  struct Foo
-  {
-    int i;
-    float f;
-    double d;
-    Boo boo;
-    eve_serializable(Foo, i, f, d, boo);
-  };
-
-  Foo foo;
-  foo.i = 42;
-  foo.f = 3.14f;
-  foo.d = 1.41;
-  foo.boo.j = 11;
-  
-  std::stringstream ss;
-  eve::serialize_as_text(foo, ss);
-
-  foo.i = 0;
-  foo.f = 0;
-  foo.d = 0;
-  foo.boo.j = 0;
-
-  eve::deserialize_as_text(ss, foo);
-
-  EXPECT_EQ(42, foo.i);
-  EXPECT_FLOAT_EQ(3.14f, foo.f);
-  EXPECT_DOUBLE_EQ(1.41, foo.d);
-  EXPECT_EQ(11, foo.boo.j);
-}
+/** }@ */
