@@ -448,3 +448,17 @@ void parser::semanic_error(const std::string& diagnostic) const
 {
   throw eve::serialization_error(m_file, m_line, m_column, diagnostic);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void eve::text_serializer<std::string>::serialize(const std::string& instance, std::ostream& output, const std::string& tab)
+{
+  output << '\"' << instance << '\"';
+}
+
+void eve::text_serializer<std::string>::deserialize(eve::serialization::parser& parser, std::string& instance)
+{
+  parser.check(parser.SYMBOL);
+  instance = parser.token();
+  parser.scan();
+}

@@ -27,9 +27,11 @@
 
 #pragma once
 
+#include "debug.h"
 #include "platform.h"
 #include "allocator.h"
 #include "detail/storage.h"
+#include "uncopyable.h"
 
 /** \addtogroup Lib
   * @{
@@ -164,6 +166,56 @@ void destroy(const T* object)
 {
   object->~T();
 }
+
+template <class T>
+class unique_ptr : uncopyable
+{
+public:
+  unique_ptr(T* object = nullptr)
+    : m_object(object)
+  {
+  }
+
+  ~unique_ptr()
+  {
+    reset();
+  }
+  
+  unique_ptr(unique_ptr&& rhs)
+    : m_object(rhs.m_object)
+  {
+    rhs.m_object;
+  }
+
+  void reset(T* other = nullptr)
+  {
+    if (m_object)
+      m_object->~T();
+    m_object = other;
+  }
+
+  T* release()
+  {
+    auto temp = m_object;
+    m_object = nullptr;
+    return temp;
+  }
+
+  operator T*() { return m_object; }
+  operator const T*() const { return m_object; }
+  T* operator->() { return m_object; }
+  const T* operator->() const { return m_object; }
+
+  unique_ptr& operator=(unique_ptr&& rhs)
+  {
+    reset(rhs.m_object);
+    rhs.m_object = nullptr;
+    return *this;
+  }
+
+private:
+  T* m_object;
+};
 
 } // storage
 } // eve

@@ -61,19 +61,6 @@ solution "eve"
     kind "StaticLib"
     includedirs { "include", "src", "extern/include" }
     files { "include/eve/**.h", "src/**.h", "src/**.inl", "src/**.cpp" }
-    defines { "EVE_STATIC_LIB", "EVE_NONCLIENT_BUILD" }
-    configuration {"Debug"}
-      targetname "evesd"
-    configuration {"Optimized"}
-      targetname "eveso"
-    configuration {"Release"}
-      targetname "eves"
-
-  project "eve_dynamic"
-    kind "SharedLib"
-    includedirs { "include", "src", "extern/include" }
-    files { "include/eve/**.h", "src/**.h", "src/**.inl", "src/**.cpp" }
-    defines { "EVE_NONCLIENT_BUILD" }
     configuration {"Debug"}
       targetname "eved"
     configuration {"Optimized"}
@@ -86,7 +73,6 @@ solution "eve"
     kind "ConsoleApp"
     includedirs { "include", "extern/include" }
     files { "tests/**.cpp" }
-    defines { "EVE_STATIC_LIB" }
     configuration "vs*"
       defines { "_VARIADIC_MAX=10" }
     configuration "Debug"
@@ -95,10 +81,10 @@ solution "eve"
       links (build_deps({"gtest", "gtest_main"}, ""))
     configuration "Debug"
       targetname "testsd"
-      links {"evesd"}
+      links {"eved"}
     configuration "Optimized"
       targetname "testso"
-      links {"eveso"}
+      links {"eveo"}
     configuration "Release"
       targetname "tests"
-      links {"eves"}
+      links {"eve"}

@@ -31,17 +31,6 @@
   * @{
   */
 
-#if defined( EVE_STATIC_LIB ) || !defined( EVE_WINDOWS )
-#   // Static libraries and linux compilers don't have the dllexport/import mechanism.
-#  define eve_dllexport
-#else
-#  if defined( EVE_NONCLIENT_BUILD )
-#    define eve_dllexport __declspec( dllexport )
-#  else
-#    define eve_dllexport __declspec( dllimport )
-#  endif
-# endif
-
 #ifdef _MSC_VER
 #  define eve_aligned(_align) __declspec(align(_align))
 #  define eve_alignof(...) __alignof(__VA_ARGS__)

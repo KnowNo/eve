@@ -27,33 +27,14 @@
 
 #pragma once
 
-#include "macro.h"
-#include "platform.h"
+#include "../serialization.h"
+#include <list>
 
-#ifndef EVE_RELEASE
+namespace eve {
 
-#define eve_assert(condition) if (!(condition)) eve::abort("Assertion fail (" #condition ") in " eve_file_line ".")
-#define eve_debug_code(...) __VA_ARGS__
-
-#else
-
-#define eve_assert(condition) {}
-#define eve_debug_code(...)
-
-#endif
-
-#define eve_internal_error eve::abort(("Internal error at " eve_file_line "."))
-
-/** \addtogroup Lib
-  * @{
-  */
-
-namespace eve
+template <class T>
+class text_serializer<std::list<T>> : public eve::text_linear_container_serializer<std::list<T>>
 {
-
-/** Shows a fatal error message and aborts execution. */
- void abort(const char* message);
+};
 
 } // eve
-
-/** }@ */

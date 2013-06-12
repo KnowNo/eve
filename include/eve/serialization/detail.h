@@ -35,6 +35,53 @@
 
 namespace eve {
 
+template <>
+class text_serializer<std::string>
+{
+public:
+  static void serialize(const std::string& instance, std::ostream& output, const std::string& tab);
+  static void deserialize(serialization::parser& parser, std::string& instance);
+};
+
+template <class T>
+void text_linear_container_serializer<T>::serialize(const T& instance, std::ostream& output, const std::string& tab)
+{
+  const bool inlined = std::is_arithmetic<T>::value;
+  output << "[";
+  if (!inlined) output << '\n';
+  std::string mtab = tab + "  ";
+  eve::size i = 0;
+  auto nelements = instance.size();
+  for (auto& element: instance)
+  {
+    if (!inlined) output << mtab;
+    text_serializer<std::remove_cv<typename T::value_type>::type>::serialize(element, output, mtab);
+    if (i < nelements - 1) output << ", ";
+    if (!inlined) output << std::endl;
+  }
+  if (!inlined) output << tab;
+  output << "]";
+}
+
+template <class T>
+void text_linear_container_serializer<T>::deserialize(serialization::parser& parser, T& instance)
+{
+  static_assert(std::has_default_constructor<typename T::value_type>::value, "eve error: container value type must have a default constructor in order to be deserializable.");
+  parser.expect('[');
+  if (!parser.is_char(']'))
+  {
+    do
+    {
+      typename T::value_type element;
+      text_serializer<std::remove_cv<typename T::value_type>::type>::deserialize(parser, element);
+      instance.emplace_back(std::move(element));
+    } while (parser.accept(','));
+  }
+  parser.expect(']');
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 namespace detail {
 
 class field
@@ -107,10 +154,10 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void eve_dllexport serialize_class_as_text(const serialization_info_base& info, const void* instance
+void serialize_class_as_text(const serialization_info_base& info, const void* instance
                                            , std::ostream& output, const std::string& tab);
 
-void eve_dllexport deserialize_class_as_text(const serialization_info_base& info, serialization::parser& parser,
+void deserialize_class_as_text(const serialization_info_base& info, serialization::parser& parser,
                                              void* instance);
 
 template <class T, bool t_is_arithmetic>
@@ -175,6 +222,5 @@ void deserialize_as_text(std::istream& input, T& value)
   eve::serialization::parser parser(&input, "stream");
   eve::text_serializer<T>::deserialize(parser, value);
 }
-
 
 } // eve

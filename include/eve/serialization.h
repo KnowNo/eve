@@ -70,7 +70,7 @@ namespace serialization
 {
 
 /** Utility class used for deserialization, it parses the source file providing methods for easy access. */
-class eve_dllexport parser
+class parser
 {
 public:
   enum token_type
@@ -138,8 +138,18 @@ void serialize_as_text(const T& value, std::ostream& output);
 template <typename T>
 void deserialize_as_text(std::istream& input, T& value);
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template <class T>
+class text_linear_container_serializer
+{
+public:
+  static void serialize(const T& instance, std::ostream& output, const std::string& tab);
+  static void deserialize(serialization::parser& parser, T& instance);
+};
+
 } // eve
 
-#include "detail/serialization.h"
+#include "serialization/detail.h"
 
 /** }@*/

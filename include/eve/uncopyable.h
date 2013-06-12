@@ -27,32 +27,41 @@
 
 #pragma once
 
-#include "macro.h"
-#include "platform.h"
-
-#ifndef EVE_RELEASE
-
-#define eve_assert(condition) if (!(condition)) eve::abort("Assertion fail (" #condition ") in " eve_file_line ".")
-#define eve_debug_code(...) __VA_ARGS__
-
-#else
-
-#define eve_assert(condition) {}
-#define eve_debug_code(...)
-
-#endif
-
-#define eve_internal_error eve::abort(("Internal error at " eve_file_line "."))
+#include <type_traits>
 
 /** \addtogroup Lib
   * @{
   */
+ 
+namespace eve {
+  
+#ifndef _MSC_VER
 
-namespace eve
+/**
+ * Derived classes cannot be copied.
+ * One day, when VS will support deleted functions, we will remove the fallback version.
+ */
+struct uncopyable
 {
+  uncopyable() { }
+  uncopyable(const uncopyable&) = delete;
+  uncopyable& operator=(const uncopyable&) = delete;
+};
 
-/** Shows a fatal error message and aborts execution. */
- void abort(const char* message);
+#else
+
+/**
+* Derived classes cannot be copied.
+*/
+struct uncopyable
+{
+  uncopyable() { }
+private:
+  uncopyable(const uncopyable&);
+  uncopyable& operator=(const uncopyable&);
+};
+
+#endif
 
 } // eve
 

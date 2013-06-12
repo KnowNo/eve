@@ -26,6 +26,7 @@
 \******************************************************************************/
 
 #include <gtest/gtest.h>
+#include <eve/serialization/vector.h>
 #include <eve/debug.h>
 #include <eve/storage.h>
 #include <eve/serialization.h>
@@ -91,7 +92,8 @@ TEST(Lib, serialization)
   struct Boo
   {
     int j;
-    
+    Boo() { }
+    Boo(int j) : j(j) {}
     eve_serializable(Boo, j);
   };
 
@@ -100,15 +102,15 @@ TEST(Lib, serialization)
     int i;
     float f;
     double d;
-    Boo boo;
-    eve_serializable(Foo, i, f, d, boo);
+    std::vector<Boo> boos;
+    eve_serializable(Foo, i, f, d, boos);
   };
 
   Foo foo;
   foo.i = 42;
   foo.f = 3.14f;
   foo.d = 1.41;
-  foo.boo.j = 11;
+  foo.boos.emplace_back(11);
   
   std::stringstream ss;
   eve::serialize_as_text(foo, ss);
@@ -116,12 +118,12 @@ TEST(Lib, serialization)
   foo.i = 0;
   foo.f = 0;
   foo.d = 0;
-  foo.boo.j = 0;
+  foo.boos.clear();
 
   eve::deserialize_as_text(ss, foo);
 
   EXPECT_EQ(42, foo.i);
   EXPECT_FLOAT_EQ(3.14f, foo.f);
   EXPECT_DOUBLE_EQ(1.41, foo.d);
-  EXPECT_EQ(11, foo.boo.j);
+  EXPECT_EQ(11, foo.boos[0].j);
 }
