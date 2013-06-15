@@ -25,75 +25,12 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/debug.h>
-#include <eve/storage.h>
-#include <eve/path.h>
-#include <fstream>
+#include "eve/exceptions.h"
+#include <string>
 
-TEST(Lib, debug)
+using namespace eve;
+
+file_not_found_error::file_not_found_error(const std::string& path)
+  : std::runtime_error("File not found: " + path + ".")
 {
-  eve_assert(2 > 1);
-}
-
-TEST(Lib, storage)
-{
-  eve::fixed_storage<7, 1> data1;
-  
-  (void)data1;
-  EXPECT_EQ(7, sizeof(data1));
-
-  eve::fixed_storage<8, 4> data4;
-
-  EXPECT_EQ(0, (eve::u64)&data4 % 4);
-  EXPECT_EQ(8, sizeof(data4));
-
-  eve::fixed_storage<32, 16> data16;
- 
-  EXPECT_EQ(0, (eve::u64)&data16 % 16);
-  EXPECT_EQ(32, sizeof(data16));
-
-  struct Foo
-  {
-    int value;
-    Foo(int val) : value(val) { }
-    ~Foo() { }
-  };
-
-  auto foo = eve::storage::create<Foo>(data16, 42);
-  EXPECT_EQ(42, foo->value);
-  eve::destroy(foo);
-
-  eve::dyn_storage<1, eve_alignof(Foo)> dynstorage;
-
-  struct Bar
-  {
-    int value;
-    char dummy[100];
-    Bar(int val) : value(val) { }
-    ~Bar() { }
-  };
-
-  auto bar = eve::storage::create<Bar>(dynstorage, 42);
-  EXPECT_EQ(42, bar->value);
-  EXPECT_TRUE(dynstorage.exceeds());
-  eve::destroy(bar);
-}
-
-TEST(Lib, allocator)
-{
-  eve::allocator::heap h;
-  eve::allocator::any a(&h);
-}
-
-TEST(Lib, path)
-{
-  std::string path = "C:/Foo/file.txt";
-
-  eve::path::pop(path);
-  eve::path::push(path, "\\file2.txt");
-
-  auto filename = eve::path::pop(path);
-  EXPECT_EQ("file2.txt", filename);
-  EXPECT_EQ("C:/Foo", path);
 }

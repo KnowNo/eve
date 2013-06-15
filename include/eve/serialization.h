@@ -54,7 +54,7 @@
 
 namespace eve {
 
-/** TODO add documentation. */
+/** This error is thrown by the deserializer on an invalid source or state. */
 class serialization_error : public std::runtime_error
 {
 public:
@@ -121,7 +121,15 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/** TODO add documentation. */
+/** Serializes in textual format the instance @p value into the stream @p output. */
+template <typename T>
+void serialize_as_text(const T& value, std::ostream& output);
+
+/** Deserializes @p input in the textual format into the instance @p value. */
+template <typename T>
+void deserialize_as_text(std::istream& input, T& value);
+
+/** Specialize this template class make new . */
 template <class T>
 class text_serializer
 {
@@ -130,16 +138,10 @@ public:
   static void deserialize(serialization::parser& parser, T& instance);
 };
 
-/** TODO add documentation. */
-template <typename T>
-void serialize_as_text(const T& value, std::ostream& output);
-
-/** TODO add documentation. */
-template <typename T>
-void deserialize_as_text(std::istream& input, T& value);
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/** Use this class to expose a new linear container type (like vector or list) to the serializer.
+  * It requires the class to be iterable and have the "push_back" method (TODO fix this). */
 template <class T>
 class text_linear_container_serializer
 {

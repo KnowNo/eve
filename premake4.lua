@@ -60,7 +60,7 @@ solution "eve"
   project "eve_static"
     kind "StaticLib"
     includedirs { "include", "src", "extern/include" }
-    files { "include/eve/**.h", "src/**.h", "src/**.inl", "src/**.cpp" }
+    files { "include/eve/**.h", "include/eve/**.inl", "src/**.h", "src/**.inl", "src/**.cpp" }
     configuration {"Debug"}
       targetname "eved"
     configuration {"Optimized"}
@@ -73,6 +73,7 @@ solution "eve"
     kind "ConsoleApp"
     includedirs { "include", "extern/include" }
     files { "tests/**.cpp" }
+	debugdir "tests"
     configuration "vs*"
       defines { "_VARIADIC_MAX=10" }
     configuration "Debug"

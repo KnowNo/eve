@@ -149,7 +149,7 @@ private:
 namespace storage {
 
 template <class T, class Storage, typename... Args>
-T* create(Storage& storage, Args&&... args)
+inline T* create(Storage& storage, Args&&... args)
 {
   void* ptr;
   eve::size space = eve_sizeof(T);
@@ -159,12 +159,6 @@ T* create(Storage& storage, Args&&... args)
     ptr = eve::align(eve_alignof(T), eve_sizeof(T), ptr, space);
   } while (storage.reserve(space));
   return new (ptr) T(std::forward<Args>(args)...);
-}
-
-template <class T>
-void destroy(const T* object)
-{
-  object->~T();
 }
 
 template <class T>
@@ -218,6 +212,7 @@ private:
 };
 
 } // storage
+
 } // eve
 
 /** }@ */

@@ -28,12 +28,14 @@
 #pragma once
 
 #include "platform.h"
+#include "uncopyable.h"
+#include <memory>
 
 /** \addtogroup Lib
   * @{
   */
 
-namespace eve { 
+namespace eve {
 
 /** If it is possible to fit size bytes of storage aligned by alignment into the
  ** buffer pointed to by @p ptr with length @p space, the function sets @p space
@@ -120,6 +122,79 @@ public:
 
  heap& global();
 
-}} // eve::allocator
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template <class Allocator>
+class scoped_alloc : uncopyable
+{
+public:
+  scoped_alloc(Allocator& alloc, eve::size size, eve::size align)
+    : m_allocator(alloc)
+  {
+    m_ptr = alloc.allocate(size, align);
+  }
+  ~scoped_alloc()
+  {
+    if (m_ptr)
+      m_allocator.deallocate(m_ptr);
+  }
+  void* release()
+  {
+    auto temp = m_ptr;
+    m_ptr = nullptr;
+    return temp;
+  }
+  operator void*() { return m_ptr;}
+private:
+  Allocator& m_allocator;
+  void* m_ptr;
+};
+
+}// allocator
+
+template <class T, class Allocator, typename... Args>
+T* create(Allocator& allocator, Args&&... args)
+{
+  allocator::scoped_alloc<Allocator> alloc(allocator, eve_sizeof(T), eve_alignof(T));
+  new (alloc) T(std::forward<Args>(args)...);
+  return static_cast<T*>(alloc.release());
+}
+
+template <class T>
+void destroy(const T* object)
+{
+  object->~T();
+}
+
+template <class T, class Allocator>
+void destroy(Allocator& allocator, const T* object)
+{
+  object->~T();
+  allocator::global().deallocate(object);
+}
+
+template <class T>
+struct global_deleter
+{
+  void operator()(T* ptr) const
+  {
+    destroy(allocator::global(), ptr);
+  }
+};
+
+template<class T>
+struct unique_ptr
+{
+  // This is because damn Visual Studio does not support template aliases.
+  typedef std::unique_ptr<T, global_deleter<T>> type;
+};
+
+template<class T, typename... Args>
+typename unique_ptr<T>::type make_unique(Args&&... args)
+{
+  return typename unique_ptr<T>::type(new T(std::forward<Args>(args)...));
+}
+
+} // eve
 
 /** }@ */

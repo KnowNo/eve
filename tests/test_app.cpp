@@ -26,74 +26,37 @@
 \******************************************************************************/
 
 #include <gtest/gtest.h>
-#include <eve/debug.h>
-#include <eve/storage.h>
-#include <eve/path.h>
-#include <fstream>
+#include <eve/application.h>
+#include <eve/resource.h>
 
-TEST(Lib, debug)
+struct dummy_res : public eve::deserializable_resource<dummy_res>
 {
-  eve_assert(2 > 1);
-}
-
-TEST(Lib, storage)
-{
-  eve::fixed_storage<7, 1> data1;
+public:
+  dummy_res(int param)
+    : param(param) {}
   
-  (void)data1;
-  EXPECT_EQ(7, sizeof(data1));
+  int param;
+  std::string name;
 
-  eve::fixed_storage<8, 4> data4;
+  eve_serializable(dummy_res, name);
+};
 
-  EXPECT_EQ(0, (eve::u64)&data4 % 4);
-  EXPECT_EQ(8, sizeof(data4));
-
-  eve::fixed_storage<32, 16> data16;
- 
-  EXPECT_EQ(0, (eve::u64)&data16 % 16);
-  EXPECT_EQ(32, sizeof(data16));
-
-  struct Foo
-  {
-    int value;
-    Foo(int val) : value(val) { }
-    ~Foo() { }
-  };
-
-  auto foo = eve::storage::create<Foo>(data16, 42);
-  EXPECT_EQ(42, foo->value);
-  eve::destroy(foo);
-
-  eve::dyn_storage<1, eve_alignof(Foo)> dynstorage;
-
-  struct Bar
-  {
-    int value;
-    char dummy[100];
-    Bar(int val) : value(val) { }
-    ~Bar() { }
-  };
-
-  auto bar = eve::storage::create<Bar>(dynstorage, 42);
-  EXPECT_EQ(42, bar->value);
-  EXPECT_TRUE(dynstorage.exceeds());
-  eve::destroy(bar);
-}
-
-TEST(Lib, allocator)
+struct dummy_host : public eve::deserializable_resource<dummy_host>
 {
-  eve::allocator::heap h;
-  eve::allocator::any a(&h);
-}
+public:
+  dummy_host()
+    : dummy((eve::resource_host*)this, 3)
+  {
+  }
 
-TEST(Lib, path)
+  int value;
+  eve::resource::ptr<dummy_res, int> dummy;
+
+  eve_serializable(dummy_host, value, dummy);
+};
+
+TEST(Application, application)
 {
-  std::string path = "C:/Foo/file.txt";
-
-  eve::path::pop(path);
-  eve::path::push(path, "\\file2.txt");
-
-  auto filename = eve::path::pop(path);
-  EXPECT_EQ("file2.txt", filename);
-  EXPECT_EQ("C:/Foo", path);
+  eve::resource::ptr<dummy_res> res;
 }
+

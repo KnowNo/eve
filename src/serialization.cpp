@@ -458,7 +458,7 @@ void eve::text_serializer<std::string>::serialize(const std::string& instance, s
 
 void eve::text_serializer<std::string>::deserialize(eve::serialization::parser& parser, std::string& instance)
 {
-  parser.check(parser.SYMBOL);
+  parser.check(parser.STRING);
   instance = parser.token();
   parser.scan();
 }

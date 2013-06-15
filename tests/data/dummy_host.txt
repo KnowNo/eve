@@ -1,0 +1,4 @@
+{
+  value = 42
+  dummy = "dummy_res.txt"
+}
