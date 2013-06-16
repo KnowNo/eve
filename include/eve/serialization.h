@@ -152,6 +152,6 @@ public:
 
 } // eve
 
-#include "serialization/detail.h"
+#include "detail/serialization.h"
 
 /** }@*/
