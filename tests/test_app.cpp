@@ -57,6 +57,14 @@ public:
 
 TEST(Application, application)
 {
-  eve::resource::ptr<dummy_res> res;
+  eve::resource::ptr<dummy_host> host;
+  host.load("data/dummy_host.txt");
+  
+  eve::resource::ptr<dummy_res, int> res(3);
+  res.load("data/dummy_res.txt");
+
+  res.force_reload();
+
+  EXPECT_EQ("Foo", host->dummy->name);
 }
 
