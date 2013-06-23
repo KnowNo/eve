@@ -27,58 +27,62 @@
 
 #pragma once
 
-/** \addtogroup Lib
+#include "../platform.h"
+
+/** \addtogroup Math
   * @{
   */
 
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
+namespace eve {
 
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::uint32)(sizeof(__VA_ARGS__))
-#endif
-
-//// Forced inlining
-#if (defined(_MSC_VER))
-#  define eve_inline __forceinline
-#elif (defined(__GNUC__))
-#  define eve_inline __attribute__((always_inline))
-#else
-#  define eve_inline inline
-#endif
-
-namespace eve
+template <typename T>
+struct tvec2
 {
+  union
+  {
+    struct { T x, y; };
+    struct { T w, h; };
+  };
 
-// Real type definition (change this to suit your needs).
-typedef float real;
+  tvec2();
+  template <typename U>
+  explicit tvec2(const U& x);
+  template <typename U, typename V>
+  explicit tvec2(const U& x, const V& y);
+  template <typename U>
+  explicit tvec2(const tvec2<U>& v);
 
-//// INT TYPES DEFINITIONS
-typedef char int8;
-typedef unsigned char uint8;
-typedef short int16;
-typedef unsigned short uint16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
-typedef uint32 size;
+  tvec2 xx() const { return tvec2(x, x); }
+  tvec2 xy() const { return tvec2(x, y); }
+  tvec2 yx() const { return tvec2(y, x); }
+  tvec2 yy() const { return tvec2(y, y); }
+  
+  T& operator[](eve::size index) { return (&x)[index]; }
+  const T& operator[](eve::size index) const { return (&x)[index]; }
 
-#ifdef EVE_32
-typedef uint32 uintptr;
-#else
-typedef uint64 uintptr;
-#endif
+  template <typename U> tvec2<T>& operator+=(const U& v);
+  template <typename U> tvec2<T>& operator+=(const tvec2<U>& v);
+  template <typename U> tvec2<T>& operator-=(const U& v);
+  template <typename U> tvec2<T>& operator-=(const tvec2<U>& v);
+  template <typename U> tvec2<T>& operator*=(const U& v);
+  template <typename U> tvec2<T>& operator*=(const tvec2<U>& v);
+  template <typename U> tvec2<T>& operator/=(const U& v);
+  template <typename U> tvec2<T>& operator/=(const tvec2<U>& v);
+  template <typename U> tvec2<T>& operator=(const tvec2<U>& v);
+};
 
-static const size size_msb = 1 << 31;
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef tvec2<real> vec2;
+typedef tvec2<int16> vec2s;
+typedef tvec2<uint16> vec2us;
+typedef tvec2<int32> vec2i;
+typedef tvec2<uint32> vec2u;
+typedef tvec2<float> vec2f;
+typedef tvec2<double> vec2d;
 
 } // eve
 
-/** }@ */
+/** @} */
+
+#include "vec2.inl"

@@ -27,58 +27,46 @@
 
 #pragma once
 
-/** \addtogroup Lib
+#include "../type_traits.h"
+
+/** \addtogroup Math
   * @{
   */
 
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
+namespace eve {
 
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::uint32)(sizeof(__VA_ARGS__))
-#endif
-
-//// Forced inlining
-#if (defined(_MSC_VER))
-#  define eve_inline __forceinline
-#elif (defined(__GNUC__))
-#  define eve_inline __attribute__((always_inline))
-#else
-#  define eve_inline inline
-#endif
-
-namespace eve
+template <typename T>
+struct inner_value_type
 {
+  typedef T type;
+};
 
-// Real type definition (change this to suit your needs).
-typedef float real;
+template <typename T>
+struct inner_value_type_to_float
+{
+  typedef typename inner_value_type<T>::type type;
+};
 
-//// INT TYPES DEFINITIONS
-typedef char int8;
-typedef unsigned char uint8;
-typedef short int16;
-typedef unsigned short uint16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
-typedef uint32 size;
+template <typename... Types>
+struct common_inner_type_to_float;
 
-#ifdef EVE_32
-typedef uint32 uintptr;
-#else
-typedef uint64 uintptr;
-#endif
+template <>
+struct common_inner_type_to_float<>
+{
+  typedef float type;
+};
 
-static const size size_msb = 1 << 31;
+template <typename Head, typename... Tail>
+struct common_inner_type_to_float<Head, Tail...>
+{
+  typedef typename eve::tofloat<
+    typename std::common_type<
+      typename inner_value_type<Head>::type,
+      typename common_inner_type_to_float<Tail...>::type
+    >::type
+  >::type type;
+};
 
 } // eve
 
-/** }@ */
+/** @} */

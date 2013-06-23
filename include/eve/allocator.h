@@ -76,7 +76,7 @@ public:
     m_table = &s_table;
   }
 
-  void* allocate(eve::size size, u8 align)
+  void* allocate(eve::size size, uint8 align)
   {
     return m_table->allocate(m_allocator, size, align);
   }
@@ -89,12 +89,12 @@ public:
 private:
   struct calltable
   {
-    void* (*allocate)(void*, eve::size, u8);
+    void* (*allocate)(void*, eve::size, uint8);
     void (*deallocate)(void*, const void*);
   };
 
   template<class T>
-  static void* allocate(void* alloc, eve::size size, u8 align)
+  static void* allocate(void* alloc, eve::size size, uint8 align)
   {
     return static_cast<T*>(alloc)->allocate(size, align);
   }
@@ -114,7 +114,7 @@ private:
 class  heap
 {
 public:
-  void* allocate(eve::size size, u8 align);
+  void* allocate(eve::size size, uint8 align);
   void  deallocate(const void* ptr);
 };
 

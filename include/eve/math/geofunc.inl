@@ -27,58 +27,50 @@
 
 #pragma once
 
-/** \addtogroup Lib
-  * @{
-  */
+namespace eve {
 
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
-
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::uint32)(sizeof(__VA_ARGS__))
-#endif
-
-//// Forced inlining
-#if (defined(_MSC_VER))
-#  define eve_inline __forceinline
-#elif (defined(__GNUC__))
-#  define eve_inline __attribute__((always_inline))
-#else
-#  define eve_inline inline
-#endif
-
-namespace eve
+template <typename T>
+eve_inline typename tofloat<T>::type length(const T& x)
 {
+  auto temp = x * x;
+  return T(sqrt(temp));
+}
 
-// Real type definition (change this to suit your needs).
-typedef float real;
+template <typename T>
+eve_inline typename eve::tofloat<T>::type length(const tvec2<T>& v)
+{
+  auto temp = v.x * v.x + v.y * v.y;
+  return static_cast<typename eve::tofloat<T>::type>(sqrt(temp));
+}
 
-//// INT TYPES DEFINITIONS
-typedef char int8;
-typedef unsigned char uint8;
-typedef short int16;
-typedef unsigned short uint16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
-typedef uint32 size;
+template <typename T> 
+eve_inline void normalize(T& v)
+{
+  auto l = length(v);
+  if (l > 0)
+    v /= l;
+  else
+    v = T();
+}
 
-#ifdef EVE_32
-typedef uint32 uintptr;
-#else
-typedef uint64 uintptr;
-#endif
+template <typename T> 
+eve_inline T normalized(const T& v)
+{
+  T cpy = v;
+  normalize(cpy);
+  return cpy;
+}
 
-static const size size_msb = 1 << 31;
+template <typename T, typename U>
+eve_inline typename common_inner_type_to_float<T, U>::type dot(const tvec2<T>& v1, const tvec2<U>& v2)
+{
+  return static_cast<typename common_inner_type_to_float<T, U>::type>(v1.x * v1.x + v2.y * v2.y);
+}
+
+template <typename T, typename U>
+eve_inline typename common_inner_type_to_float<T, U>::type cross(const tvec2<T>& v1, const tvec2<U>& v2)
+{
+  return static_cast<typename common_inner_type_to_float<T, U>::type>(v1.x * v2.y - v1.y * v2.x);
+}
 
 } // eve
-
-/** }@ */

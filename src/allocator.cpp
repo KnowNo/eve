@@ -39,7 +39,7 @@
 using namespace eve;
 using namespace eve::allocator;
 
-void* heap::allocate(eve::size size, u8 align)
+void* heap::allocate(eve::size size, uint8 align)
 {
   eve_assert(size > 0 && align > 0);
 #ifdef EVE_WINDOWS

@@ -27,58 +27,25 @@
 
 #pragma once
 
-/** \addtogroup Lib
-  * @{
-  */
+namespace eve {
 
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
-
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::uint32)(sizeof(__VA_ARGS__))
-#endif
-
-//// Forced inlining
-#if (defined(_MSC_VER))
-#  define eve_inline __forceinline
-#elif (defined(__GNUC__))
-#  define eve_inline __attribute__((always_inline))
-#else
-#  define eve_inline inline
-#endif
-
-namespace eve
+template <typename T>
+struct tofloat
 {
+  typedef float type;
+};
 
-// Real type definition (change this to suit your needs).
-typedef float real;
+template<>
+struct tofloat<eve::int64>
+{
+  typedef double type;
+};
 
-//// INT TYPES DEFINITIONS
-typedef char int8;
-typedef unsigned char uint8;
-typedef short int16;
-typedef unsigned short uint16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
-typedef uint32 size;
+template<>
+struct tofloat<eve::uint64>
+{
+  typedef double type;
+};
 
-#ifdef EVE_32
-typedef uint32 uintptr;
-#else
-typedef uint64 uintptr;
-#endif
-
-static const size size_msb = 1 << 31;
 
 } // eve
-
-/** }@ */

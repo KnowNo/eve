@@ -28,6 +28,7 @@
 #pragma once
 
 #include "macro.h"
+#include <type_traits>
 
 #define eve_gen_has_member_func(ret_type, args, member_func)\
   template <typename T>\
@@ -61,3 +62,22 @@
   public:\
     static const bool value = sizeof(test<T>(0)) == sizeof(char);\
   };
+
+/** \addtogroup Lib
+  * @{
+  */
+
+namespace eve {
+
+/** Allows to get the closest floating point type to specified type.
+    @remarks float and all integers up to 32 convert to float. double and 64 bit integer converts
+      to double.
+  */
+template <typename T>
+struct tofloat;
+
+} // eve
+
+/** @} */
+
+#include "detail/type_traits.inl"

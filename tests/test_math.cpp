@@ -25,60 +25,21 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#pragma once
+#include <gtest/gtest.h>
+#include <eve/math/vec2.h>
+#include <eve/math/geofunc.h>
+#include <iostream>
 
-/** \addtogroup Lib
-  * @{
-  */
-
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
-
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::uint32)(sizeof(__VA_ARGS__))
-#endif
-
-//// Forced inlining
-#if (defined(_MSC_VER))
-#  define eve_inline __forceinline
-#elif (defined(__GNUC__))
-#  define eve_inline __attribute__((always_inline))
-#else
-#  define eve_inline inline
-#endif
-
-namespace eve
+TEST(Math, vec2)
 {
+  eve::vec2 v1(15, 0); 
+  eve::vec2i v2(0, -1); 
 
-// Real type definition (change this to suit your needs).
-typedef float real;
+  EXPECT_EQ(15, v1[0]);
 
-//// INT TYPES DEFINITIONS
-typedef char int8;
-typedef unsigned char uint8;
-typedef short int16;
-typedef unsigned short uint16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
-typedef uint32 size;
+  v1 += v2;
+  v1 /= 2;
 
-#ifdef EVE_32
-typedef uint32 uintptr;
-#else
-typedef uint64 uintptr;
-#endif
-
-static const size size_msb = 1 << 31;
-
-} // eve
-
-/** }@ */
+  auto l = eve::distance(v1, v2);
+  auto c = eve::cross(v1, v2);
+}

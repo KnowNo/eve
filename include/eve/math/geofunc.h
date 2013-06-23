@@ -27,58 +27,41 @@
 
 #pragma once
 
-/** \addtogroup Lib
+#include "common.h"
+#include "../platform.h"
+#include "../type_traits.h"
+
+/** \addtogroup Math
   * @{
   */
 
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
+namespace eve {
 
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::uint32)(sizeof(__VA_ARGS__))
-#endif
+template <typename T> 
+typename inner_value_type<T>::type length(const T& x);
 
-//// Forced inlining
-#if (defined(_MSC_VER))
-#  define eve_inline __forceinline
-#elif (defined(__GNUC__))
-#  define eve_inline __attribute__((always_inline))
-#else
-#  define eve_inline inline
-#endif
-
-namespace eve
+template <typename T, typename U>
+typename common_inner_type_to_float<T, U>::type distance(const T& a, const U& b)
 {
+  return static_cast<typename common_inner_type_to_float<T, U>::type>(length(a - b));
+}
 
-// Real type definition (change this to suit your needs).
-typedef float real;
+/** Normalizes @p v: after calling this its length() is equal to 1. */
+template <typename T> 
+void normalize(T& v);
 
-//// INT TYPES DEFINITIONS
-typedef char int8;
-typedef unsigned char uint8;
-typedef short int16;
-typedef unsigned short uint16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
-typedef uint32 size;
+/** \returns a normalized copy of @p v. */
+template <typename T> 
+T normalized(const T& v);
 
-#ifdef EVE_32
-typedef uint32 uintptr;
-#else
-typedef uint64 uintptr;
-#endif
+template <typename T, typename U>
+typename common_inner_type_to_float<T, U>::type dot(const T& a, const U& b);
 
-static const size size_msb = 1 << 31;
+template <typename T, typename U>
+typename T cross(const T& a, const U& b);
 
 } // eve
 
-/** }@ */
+/** @} */
+
+#include "geofunc.inl"

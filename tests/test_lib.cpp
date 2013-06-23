@@ -45,12 +45,12 @@ TEST(Lib, storage)
 
   eve::fixed_storage<8, 4> data4;
 
-  EXPECT_EQ(0, (eve::u64)&data4 % 4);
+  EXPECT_EQ(0, (eve::uint64)&data4 % 4);
   EXPECT_EQ(8, sizeof(data4));
 
   eve::fixed_storage<32, 16> data16;
  
-  EXPECT_EQ(0, (eve::u64)&data16 % 16);
+  EXPECT_EQ(0, (eve::uint64)&data16 % 16);
   EXPECT_EQ(32, sizeof(data16));
 
   struct Foo
