@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include "../platform.h"
+
 namespace eve {
 
 template <typename T>

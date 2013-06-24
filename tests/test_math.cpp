@@ -27,7 +27,7 @@
 
 #include <gtest/gtest.h>
 #include <eve/math/vec2.h>
-#include <eve/math/geofunc.h>
+#include <eve/math/funcgeo.h>
 #include <iostream>
 
 TEST(Math, vec2)
@@ -42,4 +42,7 @@ TEST(Math, vec2)
 
   auto l = eve::distance(v1, v2);
   auto c = eve::cross(v1, v2);
+
+  v2.yx() = eve::vec2(1,2);
+  EXPECT_EQ(2, v2.x);
 }

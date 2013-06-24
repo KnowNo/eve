@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include "common.h"
 #include "../platform.h"
 
 /** \addtogroup Math
@@ -34,6 +35,27 @@
   */
 
 namespace eve {
+
+// Forward declarations
+template <typename> struct tvec2;
+
+namespace math {
+
+template <typename T>
+struct tref2
+{
+  tref2(T& x, T& y);
+  tref2(const tref2&);
+
+  tref2& operator=(const tref2&);
+  template <typename U>
+  tref2& operator=(const tvec2<U>&);
+
+  T& x;
+  T& y;
+};
+
+} // math
 
 template <typename T>
 struct tvec2
@@ -52,10 +74,8 @@ struct tvec2
   template <typename U>
   explicit tvec2(const tvec2<U>& v);
 
-  tvec2 xx() const { return tvec2(x, x); }
-  tvec2 xy() const { return tvec2(x, y); }
-  tvec2 yx() const { return tvec2(y, x); }
-  tvec2 yy() const { return tvec2(y, y); }
+  // This macro will generate all possible swizzle combinations of x and y.
+  __eve_gen_swizzle2(x, y)
   
   T& operator[](eve::size index) { return (&x)[index]; }
   const T& operator[](eve::size index) const { return (&x)[index]; }

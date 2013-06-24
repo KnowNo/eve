@@ -29,6 +29,19 @@
 
 #include "../type_traits.h"
 
+/** Only a helper function, actually outputs the two const and non-const functions. */
+#define __eve_swizzle2_funcs(a, b)\
+  tvec2 a##b() const { return tvec2(a, b); }\
+  math::tref2<T> a##b() { return math::tref2<T>(a, b); }
+
+/** Generates all possible swizzle functions of fields @p a and @p b. */
+#define __eve_gen_swizzle2(a, b)\
+  __eve_swizzle2_funcs(a, a)\
+  __eve_swizzle2_funcs(a, b)\
+  __eve_swizzle2_funcs(b, a)\
+  __eve_swizzle2_funcs(b, b)\
+  
+
 /** \addtogroup Math
   * @{
   */

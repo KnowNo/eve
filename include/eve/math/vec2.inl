@@ -31,6 +31,41 @@
 
 namespace eve {
 
+namespace math {
+
+template <typename T>
+tref2<T>::tref2(T& x, T& y)
+  : x(x), y(y)
+{
+}
+
+template <typename T>
+tref2<T>::tref2(const tref2<T>& r)
+  : x(r.x), y(r.y)
+{
+}
+
+template <typename T>
+tref2<T>& tref2<T>::operator=(const tref2<T>& r)
+{
+  x = r.x;
+  y = r.y;
+  return *this;
+}
+
+template <typename T>
+template <typename U>
+tref2<T>& tref2<T>::operator=(const tvec2<U>& v)
+{
+  x = T(v.x);
+  y = T(v.y);
+  return *this;
+}
+
+} // math
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template <typename T>
 eve_inline tvec2<T>::tvec2()
   : x(T(0))
@@ -246,6 +281,12 @@ eve_inline tvec2<T> operator/(const tvec2<T>& v1, const tvec2<U>& v2)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+struct inner_value_type<eve::math::tref2<T>>
+{
+  typedef T type;
+};
 
 template<typename T>
 struct inner_value_type<tvec2<T>>
