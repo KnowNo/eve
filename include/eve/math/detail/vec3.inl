@@ -34,31 +34,33 @@ namespace eve {
 namespace math {
 
 template <typename T>
-tref2<T>::tref2(T& x, T& y)
-  : x(x), y(y)
+tref3<T>::tref3(T& x, T& y, T& z)
+  : x(x), y(y), z(z)
 {
 }
 
 template <typename T>
-tref2<T>::tref2(const tref2<T>& r)
-  : x(r.x), y(r.y)
+tref3<T>::tref3(const tref3<T>& r)
+  : x(r.x), y(r.y), z(r.z)
 {
 }
 
 template <typename T>
-tref2<T>& tref2<T>::operator=(const tref2<T>& r)
+tref3<T>& tref3<T>::operator=(const tref3<T>& r)
 {
   x = r.x;
   y = r.y;
+  z = r.z;
   return *this;
 }
 
 template <typename T>
 template <typename U>
-tref2<T>& tref2<T>::operator=(const tvec2<U>& v)
+tref3<T>& tref3<T>::operator=(const tvec3<U>& v)
 {
   x = T(v.x);
   y = T(v.y);
+  z = T(v.z);
   return *this;
 }
 
@@ -67,114 +69,143 @@ tref2<T>& tref2<T>::operator=(const tvec2<U>& v)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
-eve_inline tvec2<T>::tvec2()
+eve_inline tvec3<T>::tvec3()
   : x(T(0))
   , y(T(0))
+  , z(T(0))
 {}
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>::tvec2(const U& x)
+eve_inline tvec3<T>::tvec3(const U& x)
   : x(T(x))
   , y(T(x))
+  , z(T(x))
 {}
 
 template <typename T>
-template <typename U, typename V>
-eve_inline tvec2<T>::tvec2(const U& x, const V& y)
+template <typename U, typename V, typename Z>
+eve_inline tvec3<T>::tvec3(const U& x, const V& y, const Z& z)
   : x(T(x))
   , y(T(y))
+  , z(T(z))
 {}
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>::tvec2(const tvec2<U>& v)
+eve_inline tvec3<T>::tvec3(const tvec3<U>& v)
   : x(T(v.x))
   , y(T(v.y))
+  , z(T(v.x))
 {}
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>& tvec2<T>::operator+=(const U& sv)
+eve_inline tvec3<T>::tvec3(const tvec2<U>& v)
+  : x(T(v.x))
+  , y(T(v.y))
+  , z(T(0))
+{}
+
+template <typename T>
+template <typename U>
+eve_inline tvec3<T>::tvec3(const math::tref3<U>& r)
+  : x(r.x)
+  , y(r.y)
+  , z(r.z)
+{}
+
+template <typename T>
+template <typename U>
+eve_inline tvec3<T>& tvec3<T>::operator+=(const U& sv)
 {
-  auto ts = T(s);
+  const auto ts = T(s);
   x += ts;
   y += ts;
+  z += ts;
   return *this;
 }
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>& tvec2<T>::operator+=(const tvec2<U>& v)
+eve_inline tvec3<T>& tvec3<T>::operator+=(const tvec3<U>& v)
 {
   x += T(v.x);
-  y += T(v.x);
+  y += T(v.y);
+  z += T(v.z)
   return *this;
 }
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>& tvec2<T>::operator-=(const U& s)
+eve_inline tvec3<T>& tvec3<T>::operator-=(const U& s)
 {
-  auto ts = T(s);
+  const auto ts = T(s);
   x -= ts;
   y -= ts;
+  z -= ts;
   return *this;
 }
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>& tvec2<T>::operator-=(const tvec2<U>& v)
+eve_inline tvec3<T>& tvec3<T>::operator-=(const tvec3<U>& v)
 {
   x -= T(v.x);
-  y -= T(v.x);
+  y -= T(v.y);
+  z -= T(v.z);
   return *this;
 }
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>& tvec2<T>::operator*=(const U& s)
+eve_inline tvec3<T>& tvec3<T>::operator*=(const U& s)
 {
-  auto ts = T(s);
+  const auto ts = T(s);
   x *= ts;
   y *= ts;
+  z *= ts;
   return *this;
 }
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>& tvec2<T>::operator*=(const tvec2<U>& v)
+eve_inline tvec3<T>& tvec3<T>::operator*=(const tvec3<U>& v)
 {
   x *= T(v.x);
-  y *= T(v.x);
+  y *= T(v.y);
+  z *= T(v.z);
   return *this;
 }
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>& tvec2<T>::operator/=(const U& s)
+eve_inline tvec3<T>& tvec3<T>::operator/=(const U& s)
 {
-  auto ts = T(s);
+  const auto ts = T(s);
   x /= ts;
   y /= ts;
+  z /= ts;
   return *this;
 }
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>& tvec2<T>::operator/=(const tvec2<U>& v)
+eve_inline tvec3<T>& tvec3<T>::operator/=(const tvec3<U>& v)
 {
   x /= T(v.x);
-  y /= T(v.x);
+  y /= T(v.y);
+  z /= T(v.z);
   return *this;
 }
 
 template <typename T>
 template <typename U>
-eve_inline tvec2<T>& tvec2<T>::operator=(const tvec2<U>& v)
+eve_inline tvec3<T>& tvec3<T>::operator=(const tvec3<U>& v)
 {
-  this->x = T(v.x);
-  this->y = T(v.y);
+  x = T(v.x);
+  y = T(v.y);
+  y = T(v.z);
   return *this;
 }
 
@@ -182,114 +213,134 @@ eve_inline tvec2<T>& tvec2<T>::operator=(const tvec2<U>& v)
 
 //// operator -
 template<typename T, typename U>
-eve_inline tvec2<T> operator+(const tvec2<T>& v, const U& s)
+eve_inline tvec3<T> operator+(const tvec3<T>& v, const U& s)
 {
-  return tvec2<T>(
-    v.x + T(s),
-    v.y + T(s));
+  const auto ts = T(s);
+  return tvec3<T>(
+    v.x + ts,
+    v.y + ts,
+    v.z + ts);
 }
 
 template<typename T, typename U>
-eve_inline tvec2<T> operator+(const U& s, const tvec2<T>& v)
+eve_inline tvec3<T> operator+(const U& s, const tvec3<T>& v)
 {
-  return tvec2<T>(
-    T(s) + v.x,
-    T(s) + v.y);
+  const auto ts = T(s);
+  return tvec3<T>(
+    ts + v.x,
+    ts + v.y,
+    ts + v.z);
 }
 
 template<typename T, typename U>
-eve_inline tvec2<T> operator+(const tvec2<T>& v1, const tvec2<U>& v2)
+eve_inline tvec3<T> operator+(const tvec3<T>& v1, const tvec3<U>& v2)
 {
-  return tvec2<T>(
+  return tvec3<T>(
     v1.x + T(v2.x),
-    v1.y + T(v2.y));
+    v1.y + T(v2.y),
+    v1.z + T(v2.z));
 }
 
 //// operator+
 template<typename T, typename U>
-eve_inline tvec2<T> operator-(const tvec2<T>& v, const U& s)
+eve_inline tvec3<T> operator-(const tvec3<T>& v, const U& s)
 {
-  return tvec2<T>(
-    v.x - s,
-    v.y - s);
+  const auto ts = T(s);
+  return tvec3<T>(
+    v.x - ts,
+    v.y - ts,
+    v.z - ts);
 }
 
 template<typename T, typename U>
-eve_inline tvec2<T> operator-(const U& s, const tvec2<T>& v)
+eve_inline tvec3<T> operator-(const U& s, const tvec3<T>& v)
 {
-  return tvec2<T>(
-    T(s) - v.x,
-    T(s) - v.y);
+  const auto ts = T(s);
+  return tvec3<T>(
+    ts - v.x,
+    ts - v.y,
+    ts - v.z);
 }
 
 template<typename T, typename U>
-eve_inline tvec2<T> operator-(const tvec2<T>& v1, const tvec2<U>& v2)
+eve_inline tvec3<T> operator-(const tvec3<T>& v1, const tvec3<U>& v2)
 {
-  return tvec2<T>(
+  return tvec3<T>(
     v1.x - T(v2.x),
-    v1.y - T(v2.y));
+    v1.y - T(v2.y),
+    v1.z - T(v2.z));
 }
 
 //// operator*
 template<typename T, typename U>
-eve_inline tvec2<T> operator*(const tvec2<T>& v, const U& s)
+eve_inline tvec3<T> operator*(const tvec3<T>& v, const U& s)
 {
-  return tvec2<T>(
-    v.x * T(s),
-    v.y * T(s));
+  const auto ts = T(s);
+  return tvec3<T>(
+    v.x * ts,
+    v.y * ts,
+    v.z * ts);
 }
 
 template<typename T, typename U>
-eve_inline tvec2<T> operator*(const U& s, const tvec2<T>& v)
+eve_inline tvec3<T> operator*(const U& s, const tvec3<T>& v)
 {
-  return tvec2<T>(
-    T(s) * v.x,
-    T(s) * v.y);
+  const auto ts = T(s);
+  return tvec3<T>(
+    ts * v.x,
+    ts * v.y,
+    ts * v.z);
 }
 
 template<typename T, typename U>
-eve_inline tvec2<T> operator*(const tvec2<T>& v1, const tvec2<U>& v2)
+eve_inline tvec3<T> operator*(const tvec3<T>& v1, const tvec3<U>& v2)
 {
-  return tvec2<T>(
+  return tvec3<T>(
     v1.x * T(v2.x),
-    v1.y * T(v2.y));
+    v1.y * T(v2.y),
+    v1.z * T(v2.z));
 }
 
 //// operator/
 template<typename T, typename U>
-eve_inline tvec2<T> operator/(const tvec2<T>& v, const U& s)
+eve_inline tvec3<T> operator/(const tvec3<T>& v, const U& s)
 {
-  return tvec2<T>(
-    v.x / T(s),
-    v.y / T(s));
+  const auto ts = T(s);
+  return tvec3<T>(
+    v.x / ts,
+    v.y / ts,
+    v.z / ts);
 }
 
 template<typename T, typename U>
-eve_inline tvec2<T> operator/(const U& s, const tvec2<T>& v)
+eve_inline tvec3<T> operator/(const U& s, const tvec3<T>& v)
 {
-  return tvec2<T>(
-    T(s) / v.x,
-    T(s) / v.y);
+  const auto ts = T(s);
+  return tvec3<T>(
+    ts / v.x,
+    ts / v.y,
+    ts / v.z);
 }
 
 template<typename T, typename U>
-eve_inline tvec2<T> operator/(const tvec2<T>& v1, const tvec2<U>& v2)
+eve_inline tvec3<T> operator/(const tvec3<T>& v1, const tvec3<U>& v2)
 {
-  return tvec2<T>(
+  return tvec3<T>(
     v1.x / T(v2.x),
-    v1.y / T(v2.y));
+    v1.y / T(v2.y),
+    v1.z / T(v2.z));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-struct inner_value_type<eve::math::tref2<T>>
+struct inner_value_type<eve::math::tref3<T>>
 {
   typedef T type;
 };
 
 template<typename T>
-struct inner_value_type<tvec2<T>>
+struct inner_value_type<tvec3<T>>
 {
   typedef T type;
 };

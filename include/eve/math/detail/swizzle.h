@@ -27,82 +27,60 @@
 
 #pragma once
 
-#include "common.h"
-#include "../platform.h"
+/** Only a helper function, actually outputs the two const and non-const functions. */
+#define __eve_swizzle2_funcs(a, b)\
+  tvec2<T> a##b() const { return tvec2<T>(a, b); }\
+  math::tref2<T> a##b() { return math::tref2<T>(a, b); }
 
-/** \addtogroup Math
-  * @{
-  */
+#define __eve_swizzle2_swap_funcs(a ,b)\
+  __eve_swizzle2_funcs(a, b)\
+  __eve_swizzle2_funcs(b, a)
 
-namespace eve {
+/** Generates all possible swizzle functions of fields @p a and @p b. */
+#define __eve_gen_swizzle2(a, b)\
+  __eve_swizzle2_funcs(a, a)\
+  __eve_swizzle2_swap_funcs(a, b)\
+  __eve_swizzle2_funcs(b, b)
 
-// Forward declarations
-template <typename> struct tvec2;
+#define __eve_swizzle3_funcs(a, b, c)\
+  tvec3<T> a##b##c() const { return tvec3<T>(a, b, c); }\
+  math::tref3<T> a##b##c() { return math::tref3<T>(a, b, c); }
 
-namespace math {
-
-template <typename T>
-struct tref2
-{
-  tref2(T& x, T& y);
-  tref2(const tref2&);
-
-  tref2& operator=(const tref2&);
-  template <typename U>
-  tref2& operator=(const tvec2<U>&);
-
-  T& x;
-  T& y;
-};
-
-} // math
-
-template <typename T>
-struct tvec2
-{
-  union
-  {
-    struct { T x, y; };
-    struct { T w, h; };
-  };
-
-  tvec2();
-  template <typename U>
-  explicit tvec2(const U& x);
-  template <typename U, typename V>
-  explicit tvec2(const U& x, const V& y);
-  template <typename U>
-  explicit tvec2(const tvec2<U>& v);
-
-  // This macro will generate all possible swizzle combinations of x and y.
-  __eve_gen_swizzle2(x, y)
-  
-  T& operator[](eve::size index) { return (&x)[index]; }
-  const T& operator[](eve::size index) const { return (&x)[index]; }
-
-  template <typename U> tvec2<T>& operator+=(const U& v);
-  template <typename U> tvec2<T>& operator+=(const tvec2<U>& v);
-  template <typename U> tvec2<T>& operator-=(const U& v);
-  template <typename U> tvec2<T>& operator-=(const tvec2<U>& v);
-  template <typename U> tvec2<T>& operator*=(const U& v);
-  template <typename U> tvec2<T>& operator*=(const tvec2<U>& v);
-  template <typename U> tvec2<T>& operator/=(const U& v);
-  template <typename U> tvec2<T>& operator/=(const tvec2<U>& v);
-  template <typename U> tvec2<T>& operator=(const tvec2<U>& v);
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-typedef tvec2<real> vec2;
-typedef tvec2<int16> vec2s;
-typedef tvec2<uint16> vec2us;
-typedef tvec2<int32> vec2i;
-typedef tvec2<uint32> vec2u;
-typedef tvec2<float> vec2f;
-typedef tvec2<double> vec2d;
-
-} // eve
-
-/** @} */
-
-#include "vec2.inl"
+/** Generates all possible swizzle functions of fields @p a, @p b and @p c. */
+#define __eve_gen_swizzle3(a, b, c)\
+  __eve_swizzle2_funcs(a, a)\
+  __eve_swizzle2_funcs(a, b)\
+  __eve_swizzle2_funcs(a, c)\
+  __eve_swizzle2_funcs(b, a)\
+  __eve_swizzle2_funcs(b, b)\
+  __eve_swizzle2_funcs(b, c)\
+  __eve_swizzle2_funcs(c, a)\
+  __eve_swizzle2_funcs(c, b)\
+  __eve_swizzle2_funcs(c, c)\
+  __eve_swizzle3_funcs(a, a, a)\
+  __eve_swizzle3_funcs(a, a, b)\
+  __eve_swizzle3_funcs(a, a, c)\
+  __eve_swizzle3_funcs(a, b, a)\
+  __eve_swizzle3_funcs(a, b, b)\
+  __eve_swizzle3_funcs(a, b, c)\
+  __eve_swizzle3_funcs(a, c, a)\
+  __eve_swizzle3_funcs(a, c, b)\
+  __eve_swizzle3_funcs(a, c, c)\
+  __eve_swizzle3_funcs(b, a, a)\
+  __eve_swizzle3_funcs(b, a, b)\
+  __eve_swizzle3_funcs(b, a, c)\
+  __eve_swizzle3_funcs(b, b, a)\
+  __eve_swizzle3_funcs(b, b, b)\
+  __eve_swizzle3_funcs(b, b, c)\
+  __eve_swizzle3_funcs(b, c, a)\
+  __eve_swizzle3_funcs(b, c, b)\
+  __eve_swizzle3_funcs(b, c, c)\
+  __eve_swizzle3_funcs(c, a, a)\
+  __eve_swizzle3_funcs(c, a, b)\
+  __eve_swizzle3_funcs(c, a, c)\
+  __eve_swizzle3_funcs(c, b, a)\
+  __eve_swizzle3_funcs(c, b, b)\
+  __eve_swizzle3_funcs(c, b, c)\
+  __eve_swizzle3_funcs(c, c, a)\
+  __eve_swizzle3_funcs(c, c, b)\
+  __eve_swizzle3_funcs(c, c, c)

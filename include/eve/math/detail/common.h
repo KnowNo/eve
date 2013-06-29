@@ -27,50 +27,53 @@
 
 #pragma once
 
+#include "eve/platform.h"
+#include "eve/type_traits.h"
+
+/** \addtogroup Math
+  * @{
+  */
+
 namespace eve {
 
+//// Forward declarations
+template <typename> struct tvec2;
+template <typename> struct tvec3;
+template <typename> struct tvec4;
+
+//// Some type helpers
 template <typename T>
-eve_inline typename tofloat<T>::type length(const T& x)
+struct inner_value_type
 {
-  auto temp = x * x;
-  return T(sqrt(temp));
-}
+  typedef T type;
+};
 
 template <typename T>
-eve_inline typename eve::tofloat<T>::type length(const tvec2<T>& v)
+struct inner_value_type_to_float
 {
-  auto temp = v.x * v.x + v.y * v.y;
-  return static_cast<typename eve::tofloat<T>::type>(sqrt(temp));
-}
+  typedef typename inner_value_type<T>::type type;
+};
 
-template <typename T> 
-eve_inline void normalize(T& v)
-{
-  auto l = length(v);
-  if (l > 0)
-    v /= l;
-  else
-    v = T();
-}
+template <typename... Types>
+struct common_inner_type_to_float;
 
-template <typename T> 
-eve_inline T normalized(const T& v)
+template <>
+struct common_inner_type_to_float<>
 {
-  T cpy = v;
-  normalize(cpy);
-  return cpy;
-}
+  typedef float type;
+};
 
-template <typename T, typename U>
-eve_inline typename common_inner_type_to_float<T, U>::type dot(const tvec2<T>& v1, const tvec2<U>& v2)
+template <typename Head, typename... Tail>
+struct common_inner_type_to_float<Head, Tail...>
 {
-  return static_cast<typename common_inner_type_to_float<T, U>::type>(v1.x * v1.x + v2.y * v2.y);
-}
-
-template <typename T, typename U>
-eve_inline typename common_inner_type_to_float<T, U>::type cross(const tvec2<T>& v1, const tvec2<U>& v2)
-{
-  return static_cast<typename common_inner_type_to_float<T, U>::type>(v1.x * v2.y - v1.y * v2.x);
-}
+  typedef typename eve::tofloat<
+    typename std::common_type<
+      typename inner_value_type<Head>::type,
+      typename common_inner_type_to_float<Tail...>::type
+    >::type
+  >::type type;
+};
 
 } // eve
+
+/** @} */

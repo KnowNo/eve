@@ -28,8 +28,7 @@
 #pragma once
 
 #include "common.h"
-#include "../platform.h"
-#include "../type_traits.h"
+#include "swizzle.h"
 
 /** \addtogroup Math
   * @{
@@ -37,39 +36,75 @@
 
 namespace eve {
 
-/** @returns the magnitude of @p x. */ 
-template <typename T> 
-typename inner_value_type<T>::type length(const T& x);
+// Forward declarations
+template <typename> struct tvec2;
 
-/** @returns the distance (a scalar) between @p a and @p b. */
-template <typename T, typename U>
-typename common_inner_type_to_float<T, U>::type distance(const T& a, const U& b)
+namespace math {
+
+template <typename T>
+struct tref2
 {
-  return static_cast<typename common_inner_type_to_float<T, U>::type>(length(a - b));
-}
+  tref2(T& x, T& y);
+  tref2(const tref2&);
 
-/** Normalizes @p v: after calling this its length() is equal to 1. */
-template <typename T> 
-void normalize(T& v);
+  tref2& operator=(const tref2&);
+  template <typename U>
+  tref2& operator=(const tvec2<U>&);
 
-/** @returns a normalized copy of @p v. */
-template <typename T> 
-T normalized(const T& v);
+  T& x;
+  T& y;
+};
 
-/** @returns the dot product between two vectors @p a and @p b with same dimension. */
-template <typename T, typename U>
-typename common_inner_type_to_float<T, U>::type dot(const T& a, const U& b);
+} // math
 
-/** Computes the cross product between @p a and @p b.
-    @par
-    - If a and b are two vec3s, the resulting cross product vec3 is returned.
-    - If a and b are two vec2s, they're considered two vec3 with z = 0. The z of the
-    resulting cross product is returned. */
-template <typename T, typename U>
-typename T cross(const T& a, const U& b);
+template <typename T>
+struct tvec2
+{
+  union
+  {
+    struct { T x, y; };
+    struct { T w, h; };
+  };
+
+  tvec2();
+  template <typename U>
+  explicit tvec2(const U& x);
+  template <typename U, typename V>
+  explicit tvec2(const U& x, const V& y);
+  template <typename U>
+  explicit tvec2(const tvec2<U>& v);
+  template <typename U>
+  tvec2(const math::tref2<U>& v);
+
+  // This macro will generate all possible swizzle combinations of x and y.
+  __eve_gen_swizzle2(x, y)
+  
+  T& operator[](eve::size index) { return (&x)[index]; }
+  const T& operator[](eve::size index) const { return (&x)[index]; }
+
+  template <typename U> tvec2<T>& operator+=(const U& v);
+  template <typename U> tvec2<T>& operator+=(const tvec2<U>& v);
+  template <typename U> tvec2<T>& operator-=(const U& v);
+  template <typename U> tvec2<T>& operator-=(const tvec2<U>& v);
+  template <typename U> tvec2<T>& operator*=(const U& v);
+  template <typename U> tvec2<T>& operator*=(const tvec2<U>& v);
+  template <typename U> tvec2<T>& operator/=(const U& v);
+  template <typename U> tvec2<T>& operator/=(const tvec2<U>& v);
+  template <typename U> tvec2<T>& operator=(const tvec2<U>& v);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef tvec2<real> vec2;
+typedef tvec2<int16> vec2s;
+typedef tvec2<uint16> vec2us;
+typedef tvec2<int32> vec2i;
+typedef tvec2<uint32> vec2u;
+typedef tvec2<float> vec2f;
+typedef tvec2<double> vec2d;
 
 } // eve
 
 /** @} */
 
-#include "funcgeo.inl"
+#include "vec2.inl"

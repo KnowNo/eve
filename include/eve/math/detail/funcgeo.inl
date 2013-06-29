@@ -21,65 +21,72 @@
 * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  *
 * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER       *
 * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,*
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN    *
+* OUT OF OR IN CONkNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN    *
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
 #pragma once
 
-#include "../type_traits.h"
-
-/** Only a helper function, actually outputs the two const and non-const functions. */
-#define __eve_swizzle2_funcs(a, b)\
-  tvec2 a##b() const { return tvec2(a, b); }\
-  math::tref2<T> a##b() { return math::tref2<T>(a, b); }
-
-/** Generates all possible swizzle functions of fields @p a and @p b. */
-#define __eve_gen_swizzle2(a, b)\
-  __eve_swizzle2_funcs(a, a)\
-  __eve_swizzle2_funcs(a, b)\
-  __eve_swizzle2_funcs(b, a)\
-  __eve_swizzle2_funcs(b, b)\
-  
-
-/** \addtogroup Math
-  * @{
-  */
-
 namespace eve {
 
 template <typename T>
-struct inner_value_type
+eve_inline typename tofloat<T>::type length(const T& x)
 {
-  typedef T type;
-};
+  auto temp = x * x;
+  return T(sqrt(temp));
+}
 
 template <typename T>
-struct inner_value_type_to_float
+eve_inline typename eve::tofloat<T>::type length(const tvec2<T>& v)
 {
-  typedef typename inner_value_type<T>::type type;
-};
+  auto temp = v.x * v.x + v.y * v.y;
+  return static_cast<typename eve::tofloat<T>::type>(sqrt(temp));
+}
 
-template <typename... Types>
-struct common_inner_type_to_float;
 
-template <>
-struct common_inner_type_to_float<>
+template <typename T> 
+eve_inline void normalize(T& v)
 {
-  typedef float type;
-};
+  auto l = length(v);
+  if (l > 0)
+    v /= l;
+  else
+    v = T();
+}
 
-template <typename Head, typename... Tail>
-struct common_inner_type_to_float<Head, Tail...>
+
+template <typename T> 
+eve_inline T normalized(const T& v)
 {
-  typedef typename eve::tofloat<
-    typename std::common_type<
-      typename inner_value_type<Head>::type,
-      typename common_inner_type_to_float<Tail...>::type
-    >::type
-  >::type type;
-};
+  T cpy = v;
+  normalize(cpy);
+  return cpy;
+}
+
+
+template <typename T, typename U>
+eve_inline typename common_inner_type_to_float<T, U>::type dot(const tvec2<T>& v1, const tvec2<U>& v2)
+{
+  return static_cast<typename common_inner_type_to_float<T, U>::type>(v1.x * v1.x + v2.y * v2.y);
+}
+
+template <typename T, typename U>
+eve_inline typename common_inner_type_to_float<T, U>::type dot(const tvec3<T>& v1, const tvec3<U>& v2)
+{
+  return static_cast<typename common_inner_type_to_float<T, U>::type>(v1.x * v1.x + v2.y * v2.y + v1.z * v2.z);
+}
+
+
+template <typename T, typename U>
+eve_inline typename common_inner_type_to_float<T, U>::type cross(const tvec2<T>& v1, const tvec2<U>& v2)
+{
+  return static_cast<typename common_inner_type_to_float<T, U>::type>(v1.x * v2.y - v1.y * v2.x);
+}
+
+template <typename T, typename U>
+eve_inline typename common_inner_type_to_float<T, U>::type cross(const tvec3<T>& v1, const tvec3<U>& v2)
+{
+  return static_cast<typename common_inner_type_to_float<T, U>::type>(v1.x * v2.y - v1.y * v2.x);
+}
 
 } // eve
-
-/** @} */

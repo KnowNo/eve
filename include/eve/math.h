@@ -25,26 +25,17 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/math.h>
-#include <iostream>
+#pragma once
 
-TEST(Math, vec2)
-{
-  eve::vec2 v1(15, 0); 
-  eve::vec2i v2(0, -1); 
+#include "math/detail/vec2.h"
+#include "math/detail/vec3.h"
+#include "math/detail/funcgeo.h"
 
-  EXPECT_EQ(15, v1[0]);
+/** \addtogroup Math
+  * @{
+  */
 
-  v1 += v2;
-  v1 /= 2;
+namespace eve {
+} // eve
 
-  auto l = eve::distance(v1, v2);
-  auto c = eve::cross(v1, v2);
-
-  v2.yx() = eve::vec2(1,2);
-  EXPECT_EQ(2, v2.x);
-
-  eve::vec3 p(1, 2, 3);
-  p = p.zxz();
-}
+/** @} */

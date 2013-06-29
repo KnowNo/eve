@@ -25,26 +25,91 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/math.h>
-#include <iostream>
+#pragma once
 
-TEST(Math, vec2)
+#include "common.h"
+#include "swizzle.h"
+
+/** \addtogroup Math
+  * @{
+  */
+
+namespace eve {
+
+// Forward declarations
+template <typename> struct tvec3;
+
+namespace math {
+
+template <typename T>
+struct tref3
 {
-  eve::vec2 v1(15, 0); 
-  eve::vec2i v2(0, -1); 
+  tref3(T& x, T& y, T& z);
+  tref3(const tref3&);
 
-  EXPECT_EQ(15, v1[0]);
+  tref3& operator=(const tref3&);
+  template <typename U>
+  tref3& operator=(const tvec3<U>&);
 
-  v1 += v2;
-  v1 /= 2;
+  T& x;
+  T& y;
+  T& z;
+};
 
-  auto l = eve::distance(v1, v2);
-  auto c = eve::cross(v1, v2);
+} // math
 
-  v2.yx() = eve::vec2(1,2);
-  EXPECT_EQ(2, v2.x);
+template <typename T>
+struct tvec3
+{
+  union
+  {
+    struct { T x, y, z; };
+    struct { T r, g, b; };
+  };
 
-  eve::vec3 p(1, 2, 3);
-  p = p.zxz();
-}
+  tvec3();
+  template <typename U>
+  explicit tvec3(const U& x);
+  template <typename U, typename V, typename Z>
+  explicit tvec3(const U& x, const V& y, const Z& z);
+  template <typename U>
+  explicit tvec3(const tvec2<U>& v);
+  template <typename U>
+  explicit tvec3(const tvec3<U>& v);
+  template <typename U>
+  tvec3(const math::tref3<U>& r);
+  
+  // This macro will generate all possible swizzle combinations of x and y.
+  __eve_gen_swizzle3(x, y, z)
+  
+  T& operator[](eve::size index) { return (&x)[index]; }
+  const T& operator[](eve::size index) const { return (&x)[index]; }
+
+  template <typename U> tvec3<T>& operator+=(const U& v);
+  template <typename U> tvec3<T>& operator+=(const tvec3<U>& v);
+  template <typename U> tvec3<T>& operator-=(const U& v);
+  template <typename U> tvec3<T>& operator-=(const tvec3<U>& v);
+  template <typename U> tvec3<T>& operator*=(const U& v);
+  template <typename U> tvec3<T>& operator*=(const tvec3<U>& v);
+  template <typename U> tvec3<T>& operator/=(const U& v);
+  template <typename U> tvec3<T>& operator/=(const tvec3<U>& v);
+  template <typename U> tvec3<T>& operator=(const tvec3<U>& v);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef tvec3<real> vec3;
+typedef tvec3<int8> vec3b;
+typedef tvec3<uint8> vec3ub;
+typedef tvec3<int16> vec3s;
+typedef tvec3<uint16> vec3us;
+typedef tvec3<int32> vec3i;
+typedef tvec3<uint32> vec3u;
+typedef tvec3<float> vec3f;
+typedef tvec3<double> vec3d;
+
+} // eve
+
+/** @} */
+
+#include "vec3.inl"

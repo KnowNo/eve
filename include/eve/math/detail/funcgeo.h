@@ -25,26 +25,49 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/math.h>
-#include <iostream>
+#pragma once
 
-TEST(Math, vec2)
+#include "common.h"
+
+/** \addtogroup Math
+  * @{
+  */
+
+namespace eve {
+
+/** @returns the magnitude of @p x. */ 
+template <typename T> 
+typename inner_value_type<T>::type length(const T& x);
+
+/** @returns the distance (a scalar) between @p a and @p b. */
+template <typename T, typename U>
+typename common_inner_type_to_float<T, U>::type distance(const T& a, const U& b)
 {
-  eve::vec2 v1(15, 0); 
-  eve::vec2i v2(0, -1); 
-
-  EXPECT_EQ(15, v1[0]);
-
-  v1 += v2;
-  v1 /= 2;
-
-  auto l = eve::distance(v1, v2);
-  auto c = eve::cross(v1, v2);
-
-  v2.yx() = eve::vec2(1,2);
-  EXPECT_EQ(2, v2.x);
-
-  eve::vec3 p(1, 2, 3);
-  p = p.zxz();
+  return static_cast<typename common_inner_type_to_float<T, U>::type>(length(a - b));
 }
+
+/** Normalizes @p v: after calling this its length() is equal to 1. */
+template <typename T> 
+void normalize(T& v);
+
+/** @returns a normalized copy of @p v. */
+template <typename T> 
+T normalized(const T& v);
+
+/** @returns the dot product between two vectors @p a and @p b with same dimension. */
+template <typename T, typename U>
+typename common_inner_type_to_float<T, U>::type dot(const T& a, const U& b);
+
+/** Computes the cross product between @p a and @p b.
+    @par
+    - If a and b are two vec3s, the resulting cross product vec3 is returned.
+    - If a and b are two vec2s, they're considered two vec3 with z = 0. The z of the
+    resulting cross product is returned. */
+template <typename T, typename U>
+typename T cross(const T& a, const U& b);
+
+} // eve
+
+/** @} */
+
+#include "funcgeo.inl"
