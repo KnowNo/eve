@@ -29,7 +29,7 @@
 
 #include "serialization.h"
 #include "storage.h"
-#include "detail/keyboard.h"
+#include "keyboard.h"
 #include <functional>
 
 /** \addtogroup Lib
@@ -77,6 +77,9 @@ public:
   /** @returns this window current height. */
   uint16 height() const { return m_height; }
 
+  /** @returns the keyboard instance associated to this window. */
+  const eve::keyboard& keyboard() const { return m_keyboard; }
+
   /** Configures this window using the specified @p config. */
   void configure(const config& config);
   
@@ -116,6 +119,7 @@ private:
   uint16 m_height;
   uint16 m_flags; // open? cursor captured?
   eve::fixed_storage<64> m_pimpl;
+  eve::keyboard m_keyboard;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

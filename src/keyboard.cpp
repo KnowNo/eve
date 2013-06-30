@@ -25,77 +25,18 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/resource.h>
-#include <eve/window.h>
-#include <thread>
-#include <chrono>
+#include "eve/keyboard.h"
+#include <cstring>
 
-struct dummy_res : public eve::deserializable_resource<dummy_res>
+using namespace eve;
+
+void keyboard::handle_event(key k, bool state)
 {
-public:
-  dummy_res(int param)
-    : param(param) {}
-  
-  int param;
-  std::string name;
-
-  eve_serializable(dummy_res, name);
-};
-
-struct dummy_host : public eve::deserializable_resource<dummy_host>
-{
-public:
-  dummy_host()
-    : dummy((eve::resource_host*)this, 3)
-  {
-  }
-
-  int value;
-  eve::resource::ptr<dummy_res, int> dummy;
-
-  eve_serializable(dummy_host, value, dummy);
-};
-
-TEST(Application, application)
-{
-  eve::resource::ptr<dummy_host> host;
-  host.load("data/dummy_host.txt");
-  
-  eve::resource::ptr<dummy_res, int> res(3);
-  res.load("data/dummy_res.txt");
-
-  res.force_reload();
-
-  EXPECT_EQ("Foo", host->dummy->name);
+  m_keystates[eve::size(k)] = state;
 }
 
-TEST(Application, window)
+keyboard::keyboard()
 {
-  eve::application app;
-
-  eve::window::config c;
-  c.width = 800;
-  c.height = 400;
-
-  eve::window window("eve window test");
-
-  window.configure(c);
-  window.open();
-
-  eve::window::event e;
-  while (window.opened())
-  {
-    while (window.poll(e))
-    {
-      if (e.type == e.QUIT)
-        window.close();
-    }
-    window.activate();
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(16));
-    window.display();
-    window.close();
-  }
+  memset(&m_keystates, 0, sizeof(m_keystates));
 }
+

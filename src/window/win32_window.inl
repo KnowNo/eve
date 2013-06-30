@@ -230,18 +230,18 @@ public:
     int window_width = winrect.right - winrect.left;
     int window_height = winrect.bottom - winrect.top;
 
-    m_window = CreateWindowEx(extstyle, k_classname, title,
+    m_handle = CreateWindowEx(extstyle, k_classname, title,
                                   windstyle,
                                   x, y, window_width, window_height,
                                   nullptr, // Parent window
                                   nullptr, // menu
                                   s_window_info.module, nullptr); // pass this to WM_CREATE
 
-    if (!m_window)
+    if (!m_handle)
       throw std::runtime_error("Could not create the window");
 
     // Retrieve the window device context
-    m_DC = GetDC(m_window);
+    m_DC = GetDC(m_handle);
     if (!m_DC)
       throw std::runtime_error("Could not obtain a device context for the window");
     
@@ -300,9 +300,9 @@ public:
     if (config.vsync)
       s_window_info.wglSwapIntervalEXT_proc(1);
 
-    ShowWindow(m_window, SW_SHOW);
-    SetForegroundWindow(m_window);
-    SetFocus(m_window);
+    ShowWindow(m_handle, SW_SHOW);
+    SetForegroundWindow(m_handle);
+    SetFocus(m_handle);
 
     #ifndef HID_USAGE_PAGE_GENERIC
     #define HID_USAGE_PAGE_GENERIC         ((USHORT) 0x01)
@@ -315,13 +315,18 @@ public:
     Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
     Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
     Rid[0].dwFlags = RIDEV_INPUTSINK;
-    Rid[0].hwndTarget = m_window;
+    Rid[0].hwndTarget = m_handle;
     RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
 
-    SetWindowLongPtr(m_window, GWLP_USERDATA, 0);
+    SetWindowLongPtr(m_handle, GWLP_USERDATA, 0);
 
     if (glewInit() != GLEW_OK)
       throw std::runtime_error("Failed to initialize GL extensions.");
+  }
+
+  void title(const std::string& title)
+  {
+    SetWindowText(m_handle, title.c_str());
   }
 
   void poll(eve::window::event& e, bool fullscreen)
@@ -330,11 +335,11 @@ public:
     data.event = &e;
     data.fullscreen = fullscreen;
     e.type = e.NONE;
-    SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG)&data);
+    SetWindowLongPtr(m_handle, GWLP_USERDATA, (LONG)&data);
     MSG msg;
     do 
     {
-      if (PeekMessage(&msg, m_window, 0, 0, PM_REMOVE) == FALSE)
+      if (PeekMessage(&msg, m_handle, 0, 0, PM_REMOVE) == FALSE)
         return;
       TranslateMessage(&msg);
       DispatchMessage(&msg);
@@ -353,7 +358,7 @@ public:
 
   void close(bool fullscreen, bool mousehidden)
   {
-    if (!m_window)
+    if (!m_handle)
       return;
 
     if (fullscreen)
@@ -371,19 +376,19 @@ public:
 
     if(m_DC)
     {
-      ReleaseDC(m_window, m_DC);
+      ReleaseDC(m_handle, m_DC);
       m_DC = nullptr;
     }
 
-    if (m_window)
+    if (m_handle)
     {
-      DestroyWindow(m_window);
-      m_window = nullptr;;
+      DestroyWindow(m_handle);
+      m_handle = nullptr;;
     }
   }
 
 private:
-  HWND m_window;
+  HWND m_handle;
   HDC m_DC;
   HGLRC m_context;
 };
@@ -537,33 +542,58 @@ static eve::key translate_key(WPARAM wParam, LPARAM lParam)
         return key::NUMPAD_ENTER;
       return key::ENTER;
 
-      // Printable keys are mapped according to US layout
-    case VK_SPACE:         return key::SPACE;
-    case 0xBD:             return key::MINUS;
-    case 0xBB:             return key::EQUAL;
-    case 0xDB:             return key::LEFT_BRACKET;
-    case 0xDD:             return key::RIGHT_BRACKET;
-    case 0xDC:             return key::BACKSLASH;
-    case 0xBA:             return key::SEMICOLON;
-    case 0xDE:             return key::APOSTROPHE;
-    case 0xC0:             return key::GRAVE_ACCENT;
-    case 0xBC:             return key::COMMA;
-    case 0xBE:             return key::PERIOD;
-    case 0xBF:             return key::SLASH;
-    case 0xDF:             return key::WORLD_1;
-    case 0xE2:             return key::WORLD_2;
-  
-      // Printable keys
-    default:
-    {
-      // Convert to printable character (ISO-8859-1 or Unicode)
-      wParam = MapVirtualKey((UINT)wParam, 2) & 0x0000FFFF;
-      // Make sure that the character is uppercase
-      wParam = (WPARAM) CharUpperW((LPWSTR) wParam);
-      // Valid ISO-8859-1 character?
-      if( (wParam >=  32 && wParam <= 126) || (wParam >= 160 && wParam <= 255) )
-        return (eve::key)wParam;
-    }
+    // Printable keys
+    case VK_SPACE: return key::SPACE;
+    case 0x30: return key::KEY_0;
+    case 0x31: return key::KEY_1;
+    case 0x32: return key::KEY_2;
+    case 0x33: return key::KEY_3;
+    case 0x34: return key::KEY_4;
+    case 0x35: return key::KEY_5;
+    case 0x36: return key::KEY_6;
+    case 0x37: return key::KEY_7;
+    case 0x38: return key::KEY_8;
+    case 0x39: return key::KEY_9;
+    case 0x41: return key::A;
+    case 0x42: return key::B;
+    case 0x43: return key::C;
+    case 0x44: return key::D;
+    case 0x45: return key::E;
+    case 0x46: return key::F;
+    case 0x47: return key::G;
+    case 0x48: return key::H;
+    case 0x49: return key::I;
+    case 0x4A: return key::J;
+    case 0x4B: return key::K;
+    case 0x4C: return key::L;
+    case 0x4D: return key::M;
+    case 0x4E: return key::N;
+    case 0x4F: return key::O;
+    case 0x50: return key::P;
+    case 0x51: return key::Q;
+    case 0x52: return key::R;
+    case 0x53: return key::S;
+    case 0x54: return key::T;
+    case 0x55: return key::U;
+    case 0x56: return key::V;
+    case 0x57: return key::W;
+    case 0x58: return key::X;
+    case 0x59: return key::Y;
+    case 0x5A: return key::Z;
+    case 0xBD: return key::MINUS;
+    case 0xBB: return key::EQUAL;
+    case 0xDB: return key::LEFT_BRACKET;
+    case 0xDD: return key::RIGHT_BRACKET;
+    case 0xDC: return key::BACKSLASH;
+    case 0xBA: return key::SEMICOLON;
+    case 0xDE: return key::APOSTROPHE;
+    case 0xC0: return key::GRAVE_ACCENT;
+    case 0xBC: return key::COMMA;
+    case 0xBE: return key::PERIOD;
+    case 0xBF: return key::SLASH;
+    case 0xDF: return key::WORLD_1;
+    case 0xE2: return key::WORLD_2;
+    default: break;
   }
 
   // No matching translation was found
@@ -635,9 +665,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam)
         e->type = window::event::NONE;
       break;
 
-    case WM_LBUTTONDOWN:
-      e->type = window::event::KEYUP;
-      break;
+    //case WM_LBUTTONDOWN:
+    //  e->type = window::event::NONE;
+    //  break;
 
     case WM_SIZE:
       e->size.width = LOWORD(lParam);

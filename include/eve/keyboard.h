@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include "platform.h"
+
 namespace eve {
 
 enum class key : eve::uint16
@@ -52,32 +54,32 @@ enum class key : eve::uint16
   KEY_9 = 57,
   SEMICOLON = 59,
   EQUAL = 61,
-  KEY_A = 65,
-  KEY_B = 66,
-  KEY_C = 67,
-  KEY_D = 68,
-  KEY_E = 69,
-  KEY_F = 70,
-  KEY_G = 71,
-  KEY_H = 72,
-  KEY_I = 73,
-  KEY_J = 74,
-  KEY_K = 75,
-  KEY_L = 76,
-  KEY_M = 77,
-  KEY_N = 78,
-  KEY_O = 79,
-  KEY_P = 80,
-  KEY_Q = 81,
-  KEY_R = 82,
-  KEY_S = 83,
-  KEY_T = 84,
-  KEY_U = 85,
-  KEY_V = 86,
-  KEY_W = 87,
-  KEY_X = 88,
-  KEY_Y = 89,
-  KEY_Z = 90,
+  A = 65,
+  B = 66,
+  C = 67,
+  D = 68,
+  E = 69,
+  F = 70,
+  G = 71,
+  H = 72,
+  I = 73,
+  J = 74,
+  K = 75,
+  L = 76,
+  M = 77,
+  N = 78,
+  O = 79,
+  P = 80,
+  Q = 81,
+  R = 82,
+  S = 83,
+  T = 84,
+  U = 85,
+  V = 86,
+  W = 87,
+  X = 88,
+  Y = 89,
+  Z = 90,
   LEFT_BRACKET = 91,
   BACKSLASH = 92,
   RIGHT_BRACKET = 93,
@@ -157,6 +159,25 @@ enum class key : eve::uint16
   RIGHT_SUPER = 347,
   MENU = 348,
   INVALID,
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class keyboard
+{
+public:
+  /** @returns the state of key @p k (true pressed, false released). */
+  bool keystate(key k) const { return m_keystates[eve::size(k)]; }
+
+private:
+  keyboard();
+  
+  // These function is called by eve::window on poll()
+  void handle_event(key k, bool state);
+
+  bool m_keystates[(eve::size)key::INVALID];
+
+  friend class window;
 };
 
 } // eve

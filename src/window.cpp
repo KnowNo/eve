@@ -29,7 +29,7 @@
 #include "eve/utils.h"
 
 #ifdef EVE_WINDOWS
-#include "window/window_win32.inl"
+#include "window/win32_window.inl"
 #else
 #error Implement eve::window on this platform.
 #endif
@@ -99,7 +99,7 @@ void window::title(const std::string& title)
   m_title = title;
   if (opened())
   {
-    // TODO set title
+    m_pimpl.as<window_impl>().title(title);
   }
 }
 
@@ -115,10 +115,22 @@ void window::open()
 bool window::poll(event& e)
 {
   m_pimpl.as<window_impl>().poll(e, eve::flag(m_flags, FLAG_FULLSCREEN));
-  if (e.type == event::SIZE)
-  { 
-    m_width = e.size.width;
-    m_height = e.size.height;
+  switch (e.type)
+  {
+    case event::SIZE:
+      m_width = e.size.width;
+      m_height = e.size.height;
+      break;
+
+    case event::KEYDOWN:
+      m_keyboard.handle_event(e.key.code, true);
+      break;
+
+    case event::KEYUP:
+      m_keyboard.handle_event(e.key.code, false);
+      break;
+
+    default: break;
   }
   return e.type != event::NONE;
 }
