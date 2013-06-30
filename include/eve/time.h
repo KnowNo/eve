@@ -25,86 +25,75 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/resource.h>
-#include <eve/window.h>
-#include <eve/time.h>
+#pragma once
 
-struct dummy_res : public eve::deserializable_resource<dummy_res>
+#include <string>
+
+/** \addtogroup Lib
+  * @{
+  */
+
+namespace eve {
+
+/** Provides a mechanism for measuring time. Will measure elapsed time since 
+    last time it was reset. */
+class stopwatch
 {
 public:
-  dummy_res(int param)
-    : param(param) {}
-  
-  int param;
-  std::string name;
+  /** @returns the duration in second of a tick on this machine. */
+  static double tickduration();
 
-  eve_serializable(dummy_res, name);
+  /** @returns a global timer that will measure time since application start. */
+  static const stopwatch& global();
+  
+  /** @note will call reset(). */
+  stopwatch();
+
+  /** @returns the elapsed time since last reset and restarts time measurement. */
+  double reset();
+
+  /** @returns elapsed time in seconds since last reset(). */
+  double elapsed() const;
+
+  /** @returns ticks counted since last reset(). */
+  long long ticks() const;
+
+private:
+  long long m_lasttick;
 };
 
-struct dummy_host : public eve::deserializable_resource<dummy_host>
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/** Provides a mechanism for measuring average Frames Per Second. */
+class fpscounter
 {
 public:
-  dummy_host()
-    : dummy((eve::resource_host*)this, 3)
-  {
-  }
+  fpscounter();
 
-  int value;
-  eve::resource::ptr<dummy_res, int> dummy;
+  /** @returns the average number of FPS. */
+  unsigned value() const { return m_fps; }
 
-  eve_serializable(dummy_host, value, dummy);
+  /** Updates the counter.
+      @note this function must be called once per frame. */
+  bool tick();
+
+private:
+  stopwatch m_stopwatch;
+  unsigned m_count;
+  unsigned m_fps;
 };
 
-TEST(Application, application)
-{
-  eve::resource::ptr<dummy_host> host;
-  host.load("data/dummy_host.txt");
-  
-  eve::resource::ptr<dummy_res, int> res(3);
-  res.load("data/dummy_res.txt");
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  res.force_reload();
+namespace time {
 
-  EXPECT_EQ("Foo", host->dummy->name);
-}
+/** Makes this thread sleep so that target fps @p target_fps is achieved.
+    @param elapsed elapsed time since last frame.
+    @param target_fps desired fps (e.g. 60). */
+void fps_wait(float elapsed, unsigned target_fps);
 
-TEST(Application, window)
-{
-  eve::application app;
+} // time
 
-  eve::window::config c;
-  c.width = 800;
-  c.height = 400;
+} // eve
 
-  eve::window window("eve window test");
-
-  window.configure(c);
-  window.open();
-
-  eve::window::event e;
-  eve::stopwatch sw;
-  eve::fpscounter fps;
-  while (window.opened())
-  {
-    while (window.poll(e))
-    {
-      if (e.type == e.QUIT)
-        window.close();
-    }
-    window.activate();
-
-    auto elapsed = sw.elapsed();
-    
-    eve::time::fps_wait((float)sw.elapsed(), 60);
-    if (fps.tick())
-    {
-      std::stringstream ss;
-      ss << "FPS: " << fps.value();
-      window.title(ss.str());
-    }
-    window.display();
-    sw.reset();
-  }
-}
+/** @} */

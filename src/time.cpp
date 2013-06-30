@@ -25,86 +25,103 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/resource.h>
-#include <eve/window.h>
-#include <eve/time.h>
+#include "eve/time.h"
+#include <thread>
+#include <chrono>
 
-struct dummy_res : public eve::deserializable_resource<dummy_res>
+#if defined(EVE_WINDOWS)
+#  include <Windows.h>
+#elif defined(EVE_LINUX)
+#  error Implement timer on linux.
+#endif
+
+using namespace eve;
+
+static long long s_frequency;
+static double s_tickduration;
+
+/** This dummy class gets the system frequency. */
+static struct dummy
 {
-public:
-  dummy_res(int param)
-    : param(param) {}
-  
-  int param;
-  std::string name;
-
-  eve_serializable(dummy_res, name);
-};
-
-struct dummy_host : public eve::deserializable_resource<dummy_host>
-{
-public:
-  dummy_host()
-    : dummy((eve::resource_host*)this, 3)
+  dummy()
   {
+    timeBeginPeriod(1);
+    QueryPerformanceFrequency(reinterpret_cast<LARGE_INTEGER*>(&s_frequency));
+    s_tickduration = 1.0 / s_frequency;
   }
+  ~dummy()
+  {
+    timeEndPeriod(1);
+  }
+} dummy_instance;
 
-  int value;
-  eve::resource::ptr<dummy_res, int> dummy;
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  eve_serializable(dummy_host, value, dummy);
-};
+static stopwatch s_stopwatch;
 
-TEST(Application, application)
+double stopwatch::tickduration()
 {
-  eve::resource::ptr<dummy_host> host;
-  host.load("data/dummy_host.txt");
-  
-  eve::resource::ptr<dummy_res, int> res(3);
-  res.load("data/dummy_res.txt");
-
-  res.force_reload();
-
-  EXPECT_EQ("Foo", host->dummy->name);
+  return s_tickduration;
 }
 
-TEST(Application, window)
+const stopwatch& stopwatch::global()
 {
-  eve::application app;
+  return s_stopwatch;
+}
 
-  eve::window::config c;
-  c.width = 800;
-  c.height = 400;
+stopwatch::stopwatch()
+{
+  reset();
+}
 
-  eve::window window("eve window test");
+double stopwatch::reset()
+{
+  auto ticks = this->ticks();
+  auto elapsed = (ticks - m_lasttick) * s_tickduration;
+  m_lasttick = ticks;
+  return elapsed;
+}
 
-  window.configure(c);
-  window.open();
+double stopwatch::elapsed() const
+{
+  auto ticks = this->ticks();
+  return (ticks - m_lasttick) * s_tickduration;
+}
 
-  eve::window::event e;
-  eve::stopwatch sw;
-  eve::fpscounter fps;
-  while (window.opened())
+long long stopwatch::ticks() const
+{
+  LARGE_INTEGER now;
+  QueryPerformanceCounter(&now);
+  return now.QuadPart;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+fpscounter::fpscounter()
+  : m_count(0), m_fps(0)
+{
+}
+
+bool fpscounter::tick()
+{
+  ++m_count;
+  if (m_stopwatch.elapsed() > 1.0f)
   {
-    while (window.poll(e))
-    {
-      if (e.type == e.QUIT)
-        window.close();
-    }
-    window.activate();
-
-    auto elapsed = sw.elapsed();
-    
-    eve::time::fps_wait((float)sw.elapsed(), 60);
-    if (fps.tick())
-    {
-      std::stringstream ss;
-      ss << "FPS: " << fps.value();
-      window.title(ss.str());
-    }
-    window.display();
-    sw.reset();
+    m_fps = unsigned(float(m_count) / float(m_stopwatch.elapsed()));
+    m_count = 0;
+    m_stopwatch.reset();
+    return true;
   }
+  return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void time::fps_wait(float elapsed, unsigned target_fps)
+{
+  const float kfrequency = 1.0f / target_fps;
+  if (elapsed < kfrequency)
+    std::this_thread::sleep_for(
+      std::chrono::milliseconds(unsigned((kfrequency - elapsed) * 1000))
+    );
 }
