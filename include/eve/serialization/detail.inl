@@ -142,7 +142,7 @@ public:
   serialization_info_base(const std::string& name) : m_name(name) { }
   const std::string& name() const { return m_name; }
   const fields_range& fields() const { return m_fields; }
-  eve::size num_fields() const { return m_fields.end() - m_fields.begin(); }
+  eve::size num_fields() const { return eve::size(m_fields.end() - m_fields.begin()); }
   const detail::field* field(const std::string& name) const;
   const detail::field* field(eve::size index) const;
 

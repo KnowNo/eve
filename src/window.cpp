@@ -114,13 +114,13 @@ void window::open()
 
 bool window::poll(event& e)
 {
-  auto result = m_pimpl.as<window_impl>().poll(e, eve::flag(m_flags, FLAG_FULLSCREEN));
+  m_pimpl.as<window_impl>().poll(e, eve::flag(m_flags, FLAG_FULLSCREEN));
   if (e.type == event::SIZE)
-  {
+  { 
     m_width = e.size.width;
     m_height = e.size.height;
   }
-  return result;
+  return e.type != event::NONE;
 }
 
 void window::activate()

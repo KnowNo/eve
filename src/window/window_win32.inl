@@ -324,7 +324,7 @@ public:
       throw std::runtime_error("Failed to initialize GL extensions.");
   }
 
-  bool poll(eve::window::event& e, bool fullscreen)
+  void poll(eve::window::event& e, bool fullscreen)
   {
     user_data data;
     data.event = &e;
@@ -335,11 +335,10 @@ public:
     do 
     {
       if (PeekMessage(&msg, m_window, 0, 0, PM_REMOVE) == FALSE)
-        return false;
+        return;
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     } while(e.type == e.NONE);
-    return true;
   }
 
   void activate()
@@ -403,93 +402,93 @@ static eve::key translate_key(WPARAM wParam, LPARAM lParam)
   {
     switch (MapVirtualKey(HIWORD(lParam) & 0xFF, 1))
     {
-    case VK_INSERT:   return key::NUMPAD_0;
-    case VK_END:      return key::NUMPAD_1;
-    case VK_DOWN:     return key::NUMPAD_2;
-    case VK_NEXT:     return key::NUMPAD_3;
-    case VK_LEFT:     return key::NUMPAD_4;
-    case VK_CLEAR:    return key::NUMPAD_5;
-    case VK_RIGHT:    return key::NUMPAD_6;
-    case VK_HOME:     return key::NUMPAD_7;
-    case VK_UP:       return key::NUMPAD_8;
-    case VK_PRIOR:    return key::NUMPAD_9;
-    case VK_DIVIDE:   return key::NUMPAD_DIVIDE;
-    case VK_MULTIPLY: return key::NUMPAD_MULTIPLY;
-    case VK_SUBTRACT: return key::NUMPAD_SUBTRACT;
-    case VK_ADD:      return key::NUMPAD_ADD;
-    case VK_DELETE:   return key::NUMPAD_DECIMAL;
-    default:          break;
+      case VK_INSERT:   return key::NUMPAD_0;
+      case VK_END:      return key::NUMPAD_1;
+      case VK_DOWN:     return key::NUMPAD_2;
+      case VK_NEXT:     return key::NUMPAD_3;
+      case VK_LEFT:     return key::NUMPAD_4;
+      case VK_CLEAR:    return key::NUMPAD_5;
+      case VK_RIGHT:    return key::NUMPAD_6;
+      case VK_HOME:     return key::NUMPAD_7;
+      case VK_UP:       return key::NUMPAD_8;
+      case VK_PRIOR:    return key::NUMPAD_9;
+      case VK_DIVIDE:   return key::NUMPAD_DIVIDE;
+      case VK_MULTIPLY: return key::NUMPAD_MULTIPLY;
+      case VK_SUBTRACT: return key::NUMPAD_SUBTRACT;
+      case VK_ADD:      return key::NUMPAD_ADD;
+      case VK_DELETE:   return key::NUMPAD_DECIMAL;
+      default:          break;
     }
   }
 
   // Special handling for system keys
   switch (wParam)
   {
-  case VK_ESCAPE:        return key::ESCAPE;
-  case VK_TAB:           return key::TAB;
-  case VK_BACK:          return key::BACKSPACE;
-  case VK_HOME:          return key::HOME;
-  case VK_END:           return key::END;
-  case VK_PRIOR:         return key::PAGE_UP;
-  case VK_NEXT:          return key::PAGE_DOWN;
-  case VK_INSERT:        return key::INSERT;
-  case VK_DELETE:        return key::DELETE;
-  case VK_LEFT:          return key::LEFT;
-  case VK_UP:            return key::UP;
-  case VK_RIGHT:         return key::RIGHT;
-  case VK_DOWN:          return key::DOWN;
-  case VK_F1:            return key::F1;
-  case VK_F2:            return key::F2;
-  case VK_F3:            return key::F3;
-  case VK_F4:            return key::F4;
-  case VK_F5:            return key::F5;
-  case VK_F6:            return key::F6;
-  case VK_F7:            return key::F7;
-  case VK_F8:            return key::F8;
-  case VK_F9:            return key::F9;
-  case VK_F10:           return key::F10;
-  case VK_F11:           return key::F11;
-  case VK_F12:           return key::F12;
-  case VK_F13:           return key::F13;
-  case VK_F14:           return key::F14;
-  case VK_F15:           return key::F15;
-  case VK_F16:           return key::F16;
-  case VK_F17:           return key::F17;
-  case VK_F18:           return key::F18;
-  case VK_F19:           return key::F19;
-  case VK_F20:           return key::F20;
-  case VK_F21:           return key::F21;
-  case VK_F22:           return key::F22;
-  case VK_F23:           return key::F23;
-  case VK_F24:           return key::F24;
-  case VK_NUMLOCK:       return key::NUM_LOCK;
-  case VK_CAPITAL:       return key::CAPS_LOCK;
-  case VK_SNAPSHOT:      return key::PRINT_SCREEN;
-  case VK_SCROLL:        return key::SCROLL_LOCK;
-  case VK_PAUSE:         return key::PAUSE;
-  case VK_LWIN:          return key::LEFT_SUPER;
-  case VK_RWIN:          return key::RIGHT_SUPER;
-  case VK_APPS:          return key::MENU;
+    case VK_ESCAPE:        return key::ESCAPE;
+    case VK_TAB:           return key::TAB;
+    case VK_BACK:          return key::BACKSPACE;
+    case VK_HOME:          return key::HOME;
+    case VK_END:           return key::END;
+    case VK_PRIOR:         return key::PAGE_UP;
+    case VK_NEXT:          return key::PAGE_DOWN;
+    case VK_INSERT:        return key::INSERT;
+    case VK_DELETE:        return key::DELETE;
+    case VK_LEFT:          return key::LEFT;
+    case VK_UP:            return key::UP;
+    case VK_RIGHT:         return key::RIGHT;
+    case VK_DOWN:          return key::DOWN;
+    case VK_F1:            return key::F1;
+    case VK_F2:            return key::F2;
+    case VK_F3:            return key::F3;
+    case VK_F4:            return key::F4;
+    case VK_F5:            return key::F5;
+    case VK_F6:            return key::F6;
+    case VK_F7:            return key::F7;
+    case VK_F8:            return key::F8;
+    case VK_F9:            return key::F9;
+    case VK_F10:           return key::F10;
+    case VK_F11:           return key::F11;
+    case VK_F12:           return key::F12;
+    case VK_F13:           return key::F13;
+    case VK_F14:           return key::F14;
+    case VK_F15:           return key::F15;
+    case VK_F16:           return key::F16;
+    case VK_F17:           return key::F17;
+    case VK_F18:           return key::F18;
+    case VK_F19:           return key::F19;
+    case VK_F20:           return key::F20;
+    case VK_F21:           return key::F21;
+    case VK_F22:           return key::F22;
+    case VK_F23:           return key::F23;
+    case VK_F24:           return key::F24;
+    case VK_NUMLOCK:       return key::NUM_LOCK;
+    case VK_CAPITAL:       return key::CAPS_LOCK;
+    case VK_SNAPSHOT:      return key::PRINT_SCREEN;
+    case VK_SCROLL:        return key::SCROLL_LOCK;
+    case VK_PAUSE:         return key::PAUSE;
+    case VK_LWIN:          return key::LEFT_SUPER;
+    case VK_RWIN:          return key::RIGHT_SUPER;
+    case VK_APPS:          return key::MENU;
 
-    // Numpad
-  case VK_NUMPAD0:       return key::NUMPAD_0;
-  case VK_NUMPAD1:       return key::NUMPAD_1;
-  case VK_NUMPAD2:       return key::NUMPAD_2;
-  case VK_NUMPAD3:       return key::NUMPAD_3;
-  case VK_NUMPAD4:       return key::NUMPAD_4;
-  case VK_NUMPAD5:       return key::NUMPAD_5;
-  case VK_NUMPAD6:       return key::NUMPAD_6;
-  case VK_NUMPAD7:       return key::NUMPAD_7;
-  case VK_NUMPAD8:       return key::NUMPAD_8;
-  case VK_NUMPAD9:       return key::NUMPAD_9;
-  case VK_DIVIDE:        return key::NUMPAD_DIVIDE;
-  case VK_MULTIPLY:      return key::NUMPAD_MULTIPLY;
-  case VK_SUBTRACT:      return key::NUMPAD_SUBTRACT;
-  case VK_ADD:           return key::NUMPAD_ADD;
-  case VK_DECIMAL:       return key::NUMPAD_DECIMAL;
+      // Numpad
+    case VK_NUMPAD0:       return key::NUMPAD_0;
+    case VK_NUMPAD1:       return key::NUMPAD_1;
+    case VK_NUMPAD2:       return key::NUMPAD_2;
+    case VK_NUMPAD3:       return key::NUMPAD_3;
+    case VK_NUMPAD4:       return key::NUMPAD_4;
+    case VK_NUMPAD5:       return key::NUMPAD_5;
+    case VK_NUMPAD6:       return key::NUMPAD_6;
+    case VK_NUMPAD7:       return key::NUMPAD_7;
+    case VK_NUMPAD8:       return key::NUMPAD_8;
+    case VK_NUMPAD9:       return key::NUMPAD_9;
+    case VK_DIVIDE:        return key::NUMPAD_DIVIDE;
+    case VK_MULTIPLY:      return key::NUMPAD_MULTIPLY;
+    case VK_SUBTRACT:      return key::NUMPAD_SUBTRACT;
+    case VK_ADD:           return key::NUMPAD_ADD;
+    case VK_DECIMAL:       return key::NUMPAD_DECIMAL;
 
-  // Special keys
-  case VK_SHIFT:
+    // Special keys
+    case VK_SHIFT:
     {
       const DWORD scancode = MapVirtualKey(VK_RSHIFT, 0);
       if ((DWORD) ((lParam & 0x01ff0000) >> 16) == scancode)
@@ -497,7 +496,7 @@ static eve::key translate_key(WPARAM wParam, LPARAM lParam)
       return key::RIGHT_SHIFT;
     }
 
-  case VK_CONTROL:
+    case VK_CONTROL:
     {
       MSG next;
       DWORD time;
@@ -527,35 +526,35 @@ static eve::key translate_key(WPARAM wParam, LPARAM lParam)
       return key::LEFT_CTRL;
     }
 
-  case VK_MENU:
-    if (lParam & 0x01000000)
-      return key::RIGHT_ALT;
-    return key::LEFT_ALT;
+    case VK_MENU:
+      if (lParam & 0x01000000)
+        return key::RIGHT_ALT;
+      return key::LEFT_ALT;
 
-    // The ENTER keys require special handling
-  case VK_RETURN:
-    if (lParam & 0x01000000)
-      return key::NUMPAD_ENTER;
-    return key::ENTER;
+      // The ENTER keys require special handling
+    case VK_RETURN:
+      if (lParam & 0x01000000)
+        return key::NUMPAD_ENTER;
+      return key::ENTER;
 
-    // Printable keys are mapped according to US layout
-  case VK_SPACE:         return key::SPACE;
-  case 0xBD:             return key::MINUS;
-  case 0xBB:             return key::EQUAL;
-  case 0xDB:             return key::LEFT_BRACKET;
-  case 0xDD:             return key::RIGHT_BRACKET;
-  case 0xDC:             return key::BACKSLASH;
-  case 0xBA:             return key::SEMICOLON;
-  case 0xDE:             return key::APOSTROPHE;
-  case 0xC0:             return key::GRAVE_ACCENT;
-  case 0xBC:             return key::COMMA;
-  case 0xBE:             return key::PERIOD;
-  case 0xBF:             return key::SLASH;
-  case 0xDF:             return key::WORLD_1;
-  case 0xE2:             return key::WORLD_2;
+      // Printable keys are mapped according to US layout
+    case VK_SPACE:         return key::SPACE;
+    case 0xBD:             return key::MINUS;
+    case 0xBB:             return key::EQUAL;
+    case 0xDB:             return key::LEFT_BRACKET;
+    case 0xDD:             return key::RIGHT_BRACKET;
+    case 0xDC:             return key::BACKSLASH;
+    case 0xBA:             return key::SEMICOLON;
+    case 0xDE:             return key::APOSTROPHE;
+    case 0xC0:             return key::GRAVE_ACCENT;
+    case 0xBC:             return key::COMMA;
+    case 0xBE:             return key::PERIOD;
+    case 0xBF:             return key::SLASH;
+    case 0xDF:             return key::WORLD_1;
+    case 0xE2:             return key::WORLD_2;
   
-    // Printable keys
-  default:
+      // Printable keys
+    default:
     {
       // Convert to printable character (ISO-8859-1 or Unicode)
       wParam = MapVirtualKey((UINT)wParam, 2) & 0x0000FFFF;
@@ -575,8 +574,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam)
 {
   auto data = reinterpret_cast<user_data*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
   eve::window::event* e = nullptr;
-  if (data)
-    e = data->event;
+  
+  if (!data || !(e = data->event))
+    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+  
   switch(uMsg)
   {
     case WM_CREATE:

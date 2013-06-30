@@ -37,7 +37,7 @@ solution "eve"
     libdirs {"extern/lib/win32", "lib/win32"}
     targetdir "lib/win32"
   configuration {"windows", "x64"}
-    libdirs {"extern/lib/win64", "lib/win364"}
+    libdirs {"extern/lib/win64", "lib/win64"}
     targetdir "lib/win64"
   configuration {"linux", "x32"}
     libdirs {"extern/lib/linux32", "lib/linux32"}
@@ -75,13 +75,16 @@ solution "eve"
     kind "ConsoleApp"
     includedirs { "include", "extern/include" }
     files { "tests/**.cpp" }
-	debugdir "tests"
+	  debugdir "tests"
+
     configuration "vs*"
       defines { "_VARIADIC_MAX=10" }
+
     configuration "Debug"
       links (build_deps({"gtest", "gtest_main"}, "d"))
     configuration "not Debug"
       links (build_deps({"gtest", "gtest_main"}, ""))
+
     configuration "Debug"
       targetname "testsd"
       links {"eved"}
