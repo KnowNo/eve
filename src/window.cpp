@@ -29,7 +29,7 @@
 #include "eve/utils.h"
 
 #ifdef EVE_WINDOWS
-#include "window/window_win32.h"
+#include "window/window_win32.inl"
 #else
 #error Implement eve::window on this platform.
 #endif
@@ -114,7 +114,13 @@ void window::open()
 
 bool window::poll(event& e)
 {
-  return m_pimpl.as<window_impl>().poll(e, eve::flag(m_flags, FLAG_FULLSCREEN));
+  auto result = m_pimpl.as<window_impl>().poll(e, eve::flag(m_flags, FLAG_FULLSCREEN));
+  if (e.type == event::SIZE)
+  {
+    m_width = e.size.width;
+    m_height = e.size.height;
+  }
+  return result;
 }
 
 void window::activate()
