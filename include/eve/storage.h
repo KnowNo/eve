@@ -41,7 +41,7 @@ namespace eve
 {
 
 /** A POD type suitable for use as uninitialized storage for any object whose
- ** size is at most Len and whose alignment requirement is a divisor of Align */
+  * size is at most Len and whose alignment requirement is a divisor of Align */
 template<eve::size t_size, eve::size t_align = 8U>
 class fixed_storage
 {
@@ -53,12 +53,28 @@ public:
   }
 
   /** Checks that @p newsize is at most t_size and always returns false
-   ** (no change occurred). */
+    * (no change occurred). */
   bool reserve(eve::size newsize)
   {
     eve_assert(newsize <= t_size);
     return false;
   }
+
+  /** Statically asserts size and alignment of T match with this storage and
+    * constructs T in this storage (calls its contructor) passing @p args to it. */
+  template<class T, typename... Args>
+  T* construct(Args&&... args)
+  {
+    return new (&m_data) T(std::forward<Args>(args)...);
+  }
+
+  /** \returns a non-const reference to the storage data reinterpreted as T. */
+  template<class T>
+  T& as() { return *reinterpret_cast<T*>(&m_data); }
+
+  /** \returns a const reference to the storage data reinterpreted as T. */
+  template<class T>
+  const T& as() const { return *reinterpret_cast<const T*>(&m_data); }
 
   /** @returns a pointer to the buffer. */
   operator void*() {return &m_data; }
@@ -92,15 +108,15 @@ public:
   }
 
   /** @returns whether or not an dynamic allocation occurred to contain a size
-   ** request larger than fixed storage size.*/
+    * request larger than fixed storage size.*/
   bool exceeds() const
   {
     return m_size > k_size;
   }
 
   /** Resizes, if possible, the storage buffer so that it becomes equal or
-   ** larger than @p size.
-   ** @returns true when the actual buffer was resized. */
+    * larger than @p size.
+    * @returns true when the actual buffer was resized. */
   bool reserve(eve::size newsize)
   {
     if (newsize <= size())
@@ -148,6 +164,7 @@ private:
 
 namespace storage {
 
+/** TODO add doc */
 template <class T, class Storage, typename... Args>
 inline T* create(Storage& storage, Args&&... args)
 {

@@ -30,10 +30,15 @@
 
 using namespace eve;
 
+extern void initialize_window();
+extern void terminate_window();
+
 application::application()
 {
+  initialize_window();
 }
 
 application::~application()
 {
+  terminate_window();
 }

@@ -25,71 +25,36 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/resource.h>
-#include <eve/window.h>
-#include <thread>
-#include <chrono>
+#pragma once
 
-struct dummy_res : public eve::deserializable_resource<dummy_res>
+/** \addtogroup Lib
+  * @{
+  */
+
+/** Returns an integer with only @p n -th bit enabled. */
+#define eve_bit(n) (1 << n)
+
+namespace eve
 {
-public:
-  dummy_res(int param)
-    : param(param) {}
-  
-  int param;
-  std::string name;
 
-  eve_serializable(dummy_res, name);
-};
-
-struct dummy_host : public eve::deserializable_resource<dummy_host>
+/** Sets the flag bit @p flag to boolean @p value in flag set @p flags. */
+template <typename T, typename Q>
+inline void flag(T& flags, Q flag, bool value)
 {
-public:
-  dummy_host()
-    : dummy((eve::resource_host*)this, 3)
-  {
-  }
-
-  int value;
-  eve::resource::ptr<dummy_res, int> dummy;
-
-  eve_serializable(dummy_host, value, dummy);
-};
-
-TEST(Application, application)
-{
-  eve::resource::ptr<dummy_host> host;
-  host.load("data/dummy_host.txt");
-  
-  eve::resource::ptr<dummy_res, int> res(3);
-  res.load("data/dummy_res.txt");
-
-  res.force_reload();
-
-  EXPECT_EQ("Foo", host->dummy->name);
+  if (value)
+    flags |= static_cast<T>(flag);
+  else
+    flags &= ~static_cast<T>(flag);
 }
 
-TEST(Application, window)
+/** @returns true if the flag bit @p flag is 1 in @p flags. */
+template <typename T, typename Q>
+inline bool flag(T flags, Q flag)
 {
-  eve::application app;
-
-  eve::window window;
-  window.open();
-
-  eve::window::event e;
-  while (window.opened())
-  {
-    while (window.poll(e))
-    {
-      if (e.type == e.QUIT)
-        window.close();
-    }
-    window.activate();
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(16));
-    window.display();
-    window.close();
-  }
+  return (flags & static_cast<T>(flag)) != 0;
 }
+
+} // eve
+
+/** }@ */
+

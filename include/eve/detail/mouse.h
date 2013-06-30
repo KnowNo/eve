@@ -25,71 +25,18 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/resource.h>
-#include <eve/window.h>
-#include <thread>
-#include <chrono>
+#pragma once
 
-struct dummy_res : public eve::deserializable_resource<dummy_res>
+#include "../platform.h"
+
+namespace eve { namespace detail
 {
-public:
-  dummy_res(int param)
-    : param(param) {}
-  
-  int param;
-  std::string name;
 
-  eve_serializable(dummy_res, name);
-};
+template<size k_size, size k_align> struct aligned_storage;
+template<size k_size> struct aligned_storage<k_size, 1> { eve_aligned(1) char data[k_size]; };
+template<size k_size> struct aligned_storage<k_size, 2> { eve_aligned(2) char data[k_size]; };
+template<size k_size> struct aligned_storage<k_size, 4> { eve_aligned(4) char data[k_size]; };
+template<size k_size> struct aligned_storage<k_size, 8> { eve_aligned(8) char data[k_size]; };
+template<size k_size> struct aligned_storage<k_size, 16> { eve_aligned(16) char data[k_size]; };
 
-struct dummy_host : public eve::deserializable_resource<dummy_host>
-{
-public:
-  dummy_host()
-    : dummy((eve::resource_host*)this, 3)
-  {
-  }
-
-  int value;
-  eve::resource::ptr<dummy_res, int> dummy;
-
-  eve_serializable(dummy_host, value, dummy);
-};
-
-TEST(Application, application)
-{
-  eve::resource::ptr<dummy_host> host;
-  host.load("data/dummy_host.txt");
-  
-  eve::resource::ptr<dummy_res, int> res(3);
-  res.load("data/dummy_res.txt");
-
-  res.force_reload();
-
-  EXPECT_EQ("Foo", host->dummy->name);
-}
-
-TEST(Application, window)
-{
-  eve::application app;
-
-  eve::window window;
-  window.open();
-
-  eve::window::event e;
-  while (window.opened())
-  {
-    while (window.poll(e))
-    {
-      if (e.type == e.QUIT)
-        window.close();
-    }
-    window.activate();
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(16));
-    window.display();
-    window.close();
-  }
-}
+}} // eve::detail

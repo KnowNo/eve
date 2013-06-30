@@ -41,8 +41,8 @@ namespace eve {
 class resource_host
 {
 public:
-  /** \returns host base resource path. It may be "". */
-  virtual const std::string& path() const = 0;
+  /** \returns host base resource path. By default it returns "". */
+  virtual const std::string& path() const;
 
   /** \returns a range of resource_host dependant on this one.
     * \note the default behaviour is the empty set. */

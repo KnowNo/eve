@@ -25,71 +25,107 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/resource.h>
-#include <eve/window.h>
-#include <thread>
-#include <chrono>
+#include "eve/window.h"
+#include "eve/utils.h"
 
-struct dummy_res : public eve::deserializable_resource<dummy_res>
+#ifdef EVE_WINDOWS
+#include "window/window_win32.h"
+#else
+#error Implement eve::window on this platform.
+#endif
+
+using namespace eve;
+
+eve_def_serializable(window::config, width, height, bpp, depth_bits, stencil_bits,
+                     fsaa, fullscreen, resizable, vsync)
+
+std::string window::config::path = "window.txt";
+u8 window::config::glmajor = 2;
+u8 window::config::glminor = 1;
+
+window::config::config()
+  : width(800)
+  , height(600)
+  , bpp(16)
+  , depth_bits(16)
+  , stencil_bits(0)
+  , fsaa(0)
+  , fullscreen(false)
+  , resizable(true)
+  , vsync(false)
 {
-public:
-  dummy_res(int param)
-    : param(param) {}
-  
-  int param;
-  std::string name;
-
-  eve_serializable(dummy_res, name);
-};
-
-struct dummy_host : public eve::deserializable_resource<dummy_host>
-{
-public:
-  dummy_host()
-    : dummy((eve::resource_host*)this, 3)
-  {
-  }
-
-  int value;
-  eve::resource::ptr<dummy_res, int> dummy;
-
-  eve_serializable(dummy_host, value, dummy);
-};
-
-TEST(Application, application)
-{
-  eve::resource::ptr<dummy_host> host;
-  host.load("data/dummy_host.txt");
-  
-  eve::resource::ptr<dummy_res, int> res(3);
-  res.load("data/dummy_res.txt");
-
-  res.force_reload();
-
-  EXPECT_EQ("Foo", host->dummy->name);
 }
 
-TEST(Application, window)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+enum
 {
-  eve::application app;
+  FLAG_OPEN = eve_bit(0),
+  FLAG_CURSOR_HIDDEN = eve_bit(1),
+  FLAG_FULLSCREEN = eve_bit(2),
+};
 
-  eve::window window;
-  window.open();
+window::window(const std::string& title)
+  : m_config((eve::resource_host*)this)
+  , m_width(0)
+  , m_height(0)
+  , m_title(title)
+  , m_flags(0)
+{
+  m_pimpl.construct<window_impl>();
+}
 
-  eve::window::event e;
-  while (window.opened())
+window::~window()
+{
+  eve::destroy(&m_pimpl.as<window_impl>());
+}
+
+bool window::opened() const
+{
+  return eve::flag(m_flags, FLAG_OPEN);
+}
+
+void window::title(const std::string& title)
+{
+  m_title = title;
+  if (opened())
   {
-    while (window.poll(e))
-    {
-      if (e.type == e.QUIT)
-        window.close();
-    }
-    window.activate();
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(16));
-    window.display();
-    window.close();
+    // TODO set title
   }
+}
+
+void window::open()
+{
+  m_config.load(config::path);
+  m_pimpl.as<window_impl>().open(*m_config, m_title.c_str());
+  m_width = m_config->width;
+  m_height = m_config->height;
+  eve::flag(m_flags, FLAG_OPEN, true);
+  eve::flag(m_flags, FLAG_FULLSCREEN, m_config->fullscreen);
+}
+
+bool window::poll(event& e)
+{
+  return m_pimpl.as<window_impl>().poll(e, eve::flag(m_flags, FLAG_FULLSCREEN));
+}
+
+void window::activate()
+{
+  m_pimpl.as<window_impl>().activate();
+}
+
+void window::display()
+{
+  m_pimpl.as<window_impl>().display();
+}
+
+void window::close()
+{
+  m_pimpl.as<window_impl>().close(m_config->fullscreen, eve::flag(m_flags, FLAG_CURSOR_HIDDEN));
+  eve::flag(m_flags, FLAG_OPEN, false);
+}
+
+void window::on_reload()
+{
+  
 }

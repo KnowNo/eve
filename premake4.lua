@@ -1,6 +1,7 @@
 
 -- Build dependency lists
 local build_deps = function(deps, suffix)
+  table.insert(deps, "glew")
   local d = {}
   for i,v in ipairs(deps) do
     d[i] = v..suffix
@@ -30,6 +31,7 @@ solution "eve"
 
   configuration "windows"
     defines { "EVE_WINDOWS" }
+    links { "winmm", "shlwapi", "opengl32"}
   
   configuration {"windows", "x32"}
     libdirs {"extern/lib/win32", "lib/win32"}
@@ -57,7 +59,7 @@ solution "eve"
     defines { "EVE_RELEASE" }
 
   -- libraries
-  project "eve_static"
+  project "eve"
     kind "StaticLib"
     includedirs { "include", "src", "extern/include" }
     files { "include/eve/**.h", "include/eve/**.inl", "src/**.h", "src/**.inl", "src/**.cpp" }

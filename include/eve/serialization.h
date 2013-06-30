@@ -50,6 +50,23 @@
       };\
       m_fields = eve::range<const eve::detail::field*>(s_fields, s_fields + sizeof(s_fields) / sizeof(eve::detail::field));\
     }\
+  };
+
+#define eve_decl_serializable\
+  struct serialization_info : public eve::detail::serialization_info_base\
+  {\
+    serialization_info();\
+  };
+
+#define eve_def_serializable(Class, ...)\
+  Class :: serialization_info::serialization_info() : eve::detail::serialization_info_base(#Class)\
+  {\
+    typedef Class serialized_class;\
+    static const eve::detail::field s_fields[] =\
+    {\
+      eve_pp_map(_eve_field, __VA_ARGS__)\
+    };\
+    m_fields = eve::range<const eve::detail::field*>(s_fields, s_fields + sizeof(s_fields) / sizeof(eve::detail::field));\
   }
 
 namespace eve {

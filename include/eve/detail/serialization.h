@@ -194,6 +194,26 @@ struct text_serializer_helper<T, true>
   }
 };
 
+template <>
+struct text_serializer_helper<bool, true>
+{
+  static void serialize(const bool& instance, std::ostream& output, const std::string& tab)
+  {
+    output << (instance ? "true" : "false");
+  }
+
+  static void deserialize(serialization::parser& parser, bool& instance)
+  {
+    if (parser.lookahead() == parser.NUMBER)
+      instance = static_cast<int>(parser.number()) != 0;
+    else if (parser.lookahead() == parser.SYMBOL)
+      instance = parser.token() == "true";
+    else
+      throw serialization_error(parser.filename(), parser.line(), parser.column(), "expected number or string.");
+    parser.scan();
+  }
+};
+
 } // detail
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
