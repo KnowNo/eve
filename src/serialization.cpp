@@ -37,13 +37,13 @@ using namespace eve::detail;
 void eve::detail::field::serialize_as_text(const void* object, std::ostream& output, const std::string& tab) const
 {
   // calculate field address from object pointer and offset
-  auto ptr = static_cast<const char*>(object) + m_table->offset;
+  auto ptr = static_cast<const char*>(object) + m_offset;
   m_table->serialize_as_text(ptr, output, tab);
 }
 
 void eve::detail::field::deserialize_as_text(serialization::parser& parser, void* object) const
 {
-  auto ptr = static_cast<char*>(object) + m_table->offset;
+  auto ptr = static_cast<char*>(object) + m_offset;
   m_table->deserialize_as_text(parser, ptr);
 }
 

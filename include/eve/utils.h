@@ -27,6 +27,9 @@
 
 #pragma once
 
+#include "exceptions.h"
+#include <fstream>
+
 /** \addtogroup Lib
   * @{
   */
@@ -53,6 +56,10 @@ inline bool flag(T flags, Q flag)
 {
   return (flags & static_cast<T>(flag)) != 0;
 }
+
+/** Tries to open an ifstream at @p path and checks that it's good.
+    @note If not good throws an eve::file_not_found_error. */
+std::ifstream open_fstream(const std::string& path);
 
 } // eve
 

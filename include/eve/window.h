@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "resource.h"
+#include "serialization.h"
 #include "storage.h"
 #include "detail/keyboard.h"
 #include <functional>
@@ -38,10 +38,10 @@
 
 namespace eve {
 
-class window : protected resource_host
+class window
 {
 public:
-  struct config : public deserializable_resource<config>
+  struct config
   {
     static std::string path;
     static u8 glmajor;
@@ -64,64 +64,24 @@ public:
     eve_decl_serializable
   };
 
-  struct event
-  {
-    enum
-    {
-      /** Internal usage, polled event will never have this type. */
-      NONE,
-
-      /** Occurs when the close button is pressed. */
-      QUIT,
-
-      /** Occurs when the window resizing ends. Fields 'width and 'height'
-          have the new dimensions.*/
-      SIZE,
-
-      /** Occurs when a key is pressed. */
-      KEYDOWN,
-
-      /** Occurs when a key is released. */
-      KEYUP,
-
-      /** Occurs when the mouse cursor is moved. */
-      MOUSEMOVE,
-
-      /** Occurs when a mouse button is either pressed or released. */
-      MOUSEBUTTON,
-
-    } type;
-    
-    struct size_event
-    {
-      u16 width;
-      u16 height;
-    };
-
-    struct key_event
-    {
-      u16 repetitions;
-      key code;
-      u16 scancode;
-      u8 mods;
-    };
-
-    union
-    {
-      size_event size;
-      key_event key;
-    };
-
-    event() : type(NONE) { }
-  };
+  struct event;
 
 public:
   /** @param title The starting window title. */
   window(const std::string& title = "eve");
   ~window();
 
+  /** @returns this window current width. */
   u16 width() const { return m_width; }
+
+  /** @returns this window current height. */
   u16 height() const { return m_height; }
+
+  /** Configures this window using the specified @p config. */
+  void configure(const config& config);
+  
+  /** Configures this window using the window::config at @p filename. */
+  void configure(const std::string& filename);
 
   /** @returns whether the window is open (open() was called successfully and
       close() has not been called yet). */
@@ -134,7 +94,7 @@ public:
   /** Opens the window using configuration file at eve::config::path.  */
   void open();
 
-  /** Pops a window event into @e from the queue. 
+  /** Pops a window event into @p e from the queue. 
       @returns whether or not an event has occurred. */
   bool poll(event& e);
 
@@ -150,16 +110,65 @@ public:
   void close();
 
 private:
-
-  /** Called when the configuration file is changed. */
-  void on_reload() override;
-
-  eve::resource::ptr<config> m_config;
+  config m_config;
   std::string m_title;
   u16 m_width;
   u16 m_height;
   u8 m_flags; // open? cursor captured?
   eve::fixed_storage<64> m_pimpl;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct window::event
+{
+  enum
+  {
+    /** Internal usage, polled event will never have this type. */
+    NONE,
+
+    /** Occurs when the close button is pressed. */
+    QUIT,
+
+    /** Occurs when the window resizing ends. Fields 'width and 'height'
+        have the new dimensions.*/
+    SIZE,
+
+    /** Occurs when a key is pressed. */
+    KEYDOWN,
+
+    /** Occurs when a key is released. */
+    KEYUP,
+
+    /** Occurs when the mouse cursor is moved. */
+    MOUSEMOVE,
+
+    /** Occurs when a mouse button is either pressed or released. */
+    MOUSEBUTTON,
+
+  } type;
+    
+  struct size_event
+  {
+    u16 width;
+    u16 height;
+  };
+
+  struct key_event
+  {
+    u16 repetitions;
+    key code;
+    u16 scancode;
+    u8 mods;
+  };
+
+  union
+  {
+    size_event size;
+    key_event key;
+  };
+
+  event() : type(NONE) { }
 };
 
 } // eve

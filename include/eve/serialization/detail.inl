@@ -92,10 +92,11 @@ public:
     : m_name(name)
   {
     static const calltable s_table = {
-      (size)&(((T*)nullptr)->*member), // offset of member in class
       &field::serialize_as_text<Q>,
       &field::deserialize_as_text<Q>
     };
+
+    m_offset = (size)&(((T*)nullptr)->*member); // offset of member in class
     m_table = &s_table;
   }
 
@@ -107,7 +108,6 @@ public:
 private:
   struct calltable
   {
-    size offset;
     void (*serialize_as_text)(const void* ptr, std::ostream& output, const std::string&);
     void (*deserialize_as_text)(serialization::parser& parser, void* object);
   };
@@ -127,6 +127,7 @@ private:
   }
 
   std::string m_name;
+  size m_offset;
   const calltable* m_table;
 };
 

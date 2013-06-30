@@ -66,8 +66,7 @@ enum
 };
 
 window::window(const std::string& title)
-  : m_config((eve::resource_host*)this)
-  , m_width(0)
+  : m_width(0)
   , m_height(0)
   , m_title(title)
   , m_flags(0)
@@ -78,6 +77,16 @@ window::window(const std::string& title)
 window::~window()
 {
   eve::destroy(&m_pimpl.as<window_impl>());
+}
+
+void window::configure(const config& config)
+{
+  m_config = config;
+}
+
+void window::configure(const std::string& filename)
+{
+  eve::deserialize_as_text(eve::open_fstream(filename), m_config);
 }
 
 bool window::opened() const
@@ -96,12 +105,11 @@ void window::title(const std::string& title)
 
 void window::open()
 {
-  m_config.load(config::path);
-  m_pimpl.as<window_impl>().open(*m_config, m_title.c_str());
-  m_width = m_config->width;
-  m_height = m_config->height;
+  m_pimpl.as<window_impl>().open(m_config, m_title.c_str());
+  m_width = m_config.width;
+  m_height = m_config.height;
   eve::flag(m_flags, FLAG_OPEN, true);
-  eve::flag(m_flags, FLAG_FULLSCREEN, m_config->fullscreen);
+  eve::flag(m_flags, FLAG_FULLSCREEN, m_config.fullscreen);
 }
 
 bool window::poll(event& e)
@@ -121,11 +129,6 @@ void window::display()
 
 void window::close()
 {
-  m_pimpl.as<window_impl>().close(m_config->fullscreen, eve::flag(m_flags, FLAG_CURSOR_HIDDEN));
+  m_pimpl.as<window_impl>().close(m_config.fullscreen, eve::flag(m_flags, FLAG_CURSOR_HIDDEN));
   eve::flag(m_flags, FLAG_OPEN, false);
-}
-
-void window::on_reload()
-{
-  
 }
