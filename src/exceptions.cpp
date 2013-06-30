@@ -30,6 +30,13 @@
 
 using namespace eve;
 
+system_error::system_error(const std::string& message)
+  : std::runtime_error(message)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 file_not_found_error::file_not_found_error(const std::string& path)
   : std::runtime_error("File not found: " + path + ".")
 {

@@ -27,66 +27,50 @@
 
 #pragma once
 
-/** \addtogroup Lib
-  * @{
-  */
+namespace eve {
+namespace hwarray {
 
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
-
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::uint32)(sizeof(__VA_ARGS__))
-#endif
-
-//// Forced inlining
-#if (defined(_MSC_VER))
-#  define eve_inline __forceinline
-#elif (defined(__GNUC__))
-#  define eve_inline __attribute__((always_inline))
-#else
-#  define eve_inline inline
-#endif
-
-namespace eve
+template <typename VertexType>
+vertices<VertexType>::vertices()
 {
+}
 
-// Real type definition (change this to suit your needs).
-typedef float real;
-
-//// INT TYPES DEFINITIONS
-typedef char int8;
-typedef unsigned char uint8;
-typedef short int16;
-typedef unsigned short uint16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
-typedef uint32 size;
-
-#ifdef EVE_32
-typedef uint32 uintptr;
-#else
-typedef uint64 uintptr;
-#endif
-
-static const size size_msb = 1 << 31;
-
-/** A convenient enum of all primitive types. */
-enum class arithmetic_type
+template <typename VertexType>
+vertices<VertexType>::vertices(hwbuffer* buffer, bool instanced)
 {
-  CHAR, UCHAR, SHORT, USHORT, INT, UINT, LONGLONG, ULONGLONG, FLOAT, DOUBLE
-};
+  setup(buffer, instanced);
+}
 
-size arithmetic_type_size(arithmetic_type type);
+template <typename VertexType>
+vertices<VertexType>::vertices(hwbuffer* buffer, eve::size offset, eve::size capacity, bool instanced)
+{
+  setup(buffer, offset, capacity, instanced);
+}
+
+
+template <typename VertexType>
+void vertices<VertexType>::setup(hwbuffer* buffer, bool instanced)
+{
+  base::setup(buffer, eve_sizeof(VertexType), instanced);
+}
+
+template <typename VertexType>
+void vertices<VertexType>::setup(hwbuffer* buffer, eve::size offset, eve::size capacity, bool instanced)
+{
+  base::setup(buffer, eve_sizeof(VertexType), offset, capacity, instanced);
+}
+
+template <typename VertexType>
+void write(const VertexType* data, const eve::size size)
+{
+  base::write(eve_sizeof(VertexType), 0, data, size);
+}
+
+template <typename VertexType>
+void write(eve::size first, const VertexType* data, const eve::size size)
+{
+  base::write(eve_sizeof(VertexType), first, data, size);
+}
 
 } // eve
-
-/** }@ */
+} // hwarray

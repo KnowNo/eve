@@ -29,7 +29,12 @@
 #include <eve/application.h>
 #include <eve/resource.h>
 #include <eve/window.h>
+#include <eve/hwbuffer.h>
+#include <eve/vertexarray.h>
 #include <eve/time.h>
+
+#define GLEW_STATIC
+#include <GL/glew.h>
 
 struct dummy_res : public eve::deserializable_resource<dummy_res>
 {
@@ -83,6 +88,23 @@ TEST(Application, window)
   window.configure(c);
   window.open();
 
+  eve::hwbuffer buff(eve::hwbuffer::type::VERTEX);
+
+  const eve::vec2 triangle[] =
+  {
+    eve::vec2(0.f, 0.f),
+    eve::vec2(1.0f, 0.0f),
+    eve::vec2(0.f, 1.0f)
+  };
+
+  buff.create(eve::hwbuffer::usage::STATIC_DRAW, eve_sizeof(triangle), triangle);
+  
+  eve::hwarray::vertices<eve::vec2> vertices(&buff);
+
+  eve::vertexarray va;
+
+  va.attach(0, &vertices);
+  
   eve::window::event e;
   eve::stopwatch sw;
   eve::fpscounter fps;
@@ -91,12 +113,15 @@ TEST(Application, window)
     while (window.poll(e))
     {
       if (e.type == e.QUIT)
-        window.close();
+        return;
     }
     window.activate();
 
-    auto elapsed = sw.elapsed();
-    
+    glViewport(0, 0, window.width(), window.height());
+
+    glColor3f(1,1,1);
+    va.draw(eve::primitive_type::TRIANGLES, 0, 3);
+
     eve::time::fps_wait((float)sw.elapsed(), 60);
     if (fps.tick())
     {

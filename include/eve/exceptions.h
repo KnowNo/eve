@@ -35,6 +35,14 @@
 
 namespace eve {
 
+class system_error : public std::runtime_error
+{
+public:
+  system_error(const std::string& message) throw();
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 class file_not_found_error : public std::runtime_error
 {
 public:

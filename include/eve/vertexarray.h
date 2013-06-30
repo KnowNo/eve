@@ -27,66 +27,60 @@
 
 #pragma once
 
+#include "vertex.h"
+#include "storage.h"
+
 /** \addtogroup Lib
   * @{
   */
 
-#ifdef _MSC_VER
-#  define eve_aligned(_align) __declspec(align(_align))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#else
-#  define eve_aligned(_align) __attribute__ ((aligned (_align)))
-#  define eve_alignof(...) __alignof(__VA_ARGS__)
-#endif
+namespace eve {
 
-#ifdef EVE_32
-#  define eve_sizeof(...) sizeof(__VA_ARGS__)
-#else
-#  define eve_sizeof(...) (eve::uint32)(sizeof(__VA_ARGS__))
-#endif
-
-//// Forced inlining
-#if (defined(_MSC_VER))
-#  define eve_inline __forceinline
-#elif (defined(__GNUC__))
-#  define eve_inline __attribute__((always_inline))
-#else
-#  define eve_inline inline
-#endif
-
-namespace eve
+// TODO move this somewhere else
+enum class primitive_type
 {
-
-// Real type definition (change this to suit your needs).
-typedef float real;
-
-//// INT TYPES DEFINITIONS
-typedef char int8;
-typedef unsigned char uint8;
-typedef short int16;
-typedef unsigned short uint16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
-typedef uint32 size;
-
-#ifdef EVE_32
-typedef uint32 uintptr;
-#else
-typedef uint64 uintptr;
-#endif
-
-static const size size_msb = 1 << 31;
-
-/** A convenient enum of all primitive types. */
-enum class arithmetic_type
-{
-  CHAR, UCHAR, SHORT, USHORT, INT, UINT, LONGLONG, ULONGLONG, FLOAT, DOUBLE
+  POINTS, LINES, LINE_LOOP, TRIANGLES, TRIANGLE_STRIP
 };
 
-size arithmetic_type_size(arithmetic_type type);
+// Forward declarations
+namespace hwarray {
+  class indices;
+  template <typename> class vertices;
+}
+
+class vertexarray : uncopyable
+{
+public:
+  static const eve::size k_max_buffers = 8;
+
+  static void unbind();
+
+  vertexarray();
+  ~vertexarray();
+
+  void attach(hwarray::indices* indices);
+
+  template <typename T>
+  void attach(eve::size location, hwarray::vertices<T>* vertices)
+  {
+    bind();
+    vertices->buffer()->bind();
+    do_attach(location, eve_sizeof(T), eve::vertex_info<T>::components);
+  }
+
+  void destroy();
+
+  void draw(primitive_type primitive) const;
+  void draw(primitive_type primitive, size first, size count) const;
+
+private:
+  void bind() const;
+  void do_attach(size location, size stride, const eve::vertex_component* components);
+
+  hwarray::indices* m_indices;
+  fixed_storage<eve_sizeof(void*), eve_alignof(void*)> m_pimpl;
+};
 
 } // eve
 
-/** }@ */
+/** @} */
