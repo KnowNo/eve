@@ -170,8 +170,8 @@ public:
   void open(const eve::window::config& config, const char* title)
   {
     // Calculate window dimensions
-    u16 x = (GetSystemMetrics(SM_CXSCREEN) - config.width) / 2;
-    u16 y = (GetSystemMetrics(SM_CYSCREEN) - config.height) / 2;
+    uint16 x = (GetSystemMetrics(SM_CXSCREEN) - config.width) / 2;
+    uint16 y = (GetSystemMetrics(SM_CYSCREEN) - config.height) / 2;
 
     RECT winrect;
     winrect.left   = x;

@@ -29,7 +29,7 @@
 
 namespace eve {
 
-enum class key : eve::u16
+enum class key : eve::uint16
 {
   UNKNOWN = 0xFFFF,
   SPACE = 32,

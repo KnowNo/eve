@@ -40,8 +40,8 @@ eve_def_serializable(window::config, width, height, bpp, depth_bits, stencil_bit
                      fsaa, fullscreen, resizable, vsync)
 
 std::string window::config::path = "window.txt";
-u8 window::config::glmajor = 2;
-u8 window::config::glminor = 1;
+uint8 window::config::glmajor = 2;
+uint8 window::config::glminor = 1;
 
 window::config::config()
   : width(800)

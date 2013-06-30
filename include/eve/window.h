@@ -44,15 +44,15 @@ public:
   struct config
   {
     static std::string path;
-    static u8 glmajor;
-    static u8 glminor;
+    static uint8 glmajor;
+    static uint8 glminor;
 
-    u16 width;
-    u16 height;
-    u8 bpp;
-    u8 depth_bits;
-    u8 stencil_bits;
-    u8 fsaa;
+    uint16 width;
+    uint16 height;
+    uint8 bpp;
+    uint8 depth_bits;
+    uint8 stencil_bits;
+    uint8 fsaa;
 
     bool fullscreen;
     bool resizable;
@@ -72,10 +72,10 @@ public:
   ~window();
 
   /** @returns this window current width. */
-  u16 width() const { return m_width; }
+  uint16 width() const { return m_width; }
 
   /** @returns this window current height. */
-  u16 height() const { return m_height; }
+  uint16 height() const { return m_height; }
 
   /** Configures this window using the specified @p config. */
   void configure(const config& config);
@@ -112,9 +112,9 @@ public:
 private:
   config m_config;
   std::string m_title;
-  u16 m_width;
-  u16 m_height;
-  u8 m_flags; // open? cursor captured?
+  uint16 m_width;
+  uint16 m_height;
+  uint16 m_flags; // open? cursor captured?
   eve::fixed_storage<64> m_pimpl;
 };
 
@@ -150,16 +150,16 @@ struct window::event
     
   struct size_event
   {
-    u16 width;
-    u16 height;
+    uint16 width;
+    uint16 height;
   };
 
   struct key_event
   {
-    u16 repetitions;
+    uint16 repetitions;
     key code;
-    u16 scancode;
-    u8 mods;
+    uint16 scancode;
+    uint8 mods;
   };
 
   union
