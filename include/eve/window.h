@@ -30,6 +30,7 @@
 #include "serialization.h"
 #include "storage.h"
 #include "keyboard.h"
+#include "mouse.h"
 #include <functional>
 
 /** \addtogroup Lib
@@ -80,6 +81,9 @@ public:
   /** @returns the keyboard instance associated to this window. */
   const eve::keyboard& keyboard() const { return m_keyboard; }
 
+  /** @returns the mouse instance associated to this window. */
+  const eve::mouse& mouse() const { return m_mouse; }
+
   /** Configures this window using the specified @p config. */
   void configure(const config& config);
   
@@ -117,9 +121,9 @@ private:
   std::string m_title;
   uint16 m_width;
   uint16 m_height;
-  uint16 m_flags; // open? cursor captured?
   eve::fixed_storage<64> m_pimpl;
   eve::keyboard m_keyboard;
+  eve::mouse m_mouse;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -145,10 +149,13 @@ struct window::event
     KEYUP,
 
     /** Occurs when the mouse cursor is moved. */
-    MOUSEMOVE,
+    MOUSEMOTION,
 
-    /** Occurs when a mouse button is either pressed or released. */
-    MOUSEBUTTON,
+    /** Occurs when a mouse button is pressed. */
+    MOUSEDOWN,
+
+    /** Occurs when a mouse button is released. */
+    MOUSEUP,
 
   } type;
     
@@ -166,11 +173,18 @@ struct window::event
     uint8 mods;
   };
 
+  struct mouse_event
+  {
+    eve::vec2i cursor;
+    mouse::button button;
+  };
+
   union
   {
     size_event size;
     key_event key;
   };
+  mouse_event mouse;
 
   event() : type(NONE) { }
 };

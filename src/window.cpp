@@ -58,18 +58,10 @@ window::config::config()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-enum
-{
-  FLAG_OPEN = eve_bit(0),
-  FLAG_CURSOR_HIDDEN = eve_bit(1),
-  FLAG_FULLSCREEN = eve_bit(2),
-};
-
 window::window(const std::string& title)
   : m_width(0)
   , m_height(0)
   , m_title(title)
-  , m_flags(0)
 {
   m_pimpl.construct<window_impl>();
 }
@@ -91,7 +83,7 @@ void window::configure(const std::string& filename)
 
 bool window::opened() const
 {
-  return eve::flag(m_flags, FLAG_OPEN);
+  return m_pimpl.as<window_impl>().opened();
 }
 
 void window::title(const std::string& title)
@@ -108,13 +100,11 @@ void window::open()
   m_pimpl.as<window_impl>().open(m_config, m_title.c_str());
   m_width = m_config.width;
   m_height = m_config.height;
-  eve::flag(m_flags, FLAG_OPEN, true);
-  eve::flag(m_flags, FLAG_FULLSCREEN, m_config.fullscreen);
 }
 
 bool window::poll(event& e)
 {
-  m_pimpl.as<window_impl>().poll(e, eve::flag(m_flags, FLAG_FULLSCREEN));
+  m_pimpl.as<window_impl>().poll(e);
   switch (e.type)
   {
     case event::SIZE:
@@ -123,11 +113,20 @@ bool window::poll(event& e)
       break;
 
     case event::KEYDOWN:
-      m_keyboard.handle_event(e.key.code, true);
+    case event::KEYUP:
+      m_keyboard.handle_event(e.key.code, e.type == event::KEYDOWN);
       break;
 
-    case event::KEYUP:
       m_keyboard.handle_event(e.key.code, false);
+      break;
+
+    case event::MOUSEMOTION:
+      m_mouse.handle_motion(e.mouse.cursor);
+      break;
+
+    case event::MOUSEDOWN:
+    case event::MOUSEUP:
+      m_mouse.handle_click(e.mouse.button, e.type == event::MOUSEDOWN);
       break;
 
     default: break;
@@ -147,6 +146,5 @@ void window::display()
 
 void window::close()
 {
-  m_pimpl.as<window_impl>().close(m_config.fullscreen, eve::flag(m_flags, FLAG_CURSOR_HIDDEN));
-  eve::flag(m_flags, FLAG_OPEN, false);
+  m_pimpl.as<window_impl>().close();
 }

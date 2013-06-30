@@ -25,89 +25,22 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#pragma once
+#include "eve/mouse.h"
+#include <cstring>
 
-#include "common.h"
-#include "swizzle.h"
+using namespace eve;
 
-/** \addtogroup Math
-  * @{
-  */
-
-namespace eve {
-
-// Forward declarations
-template <typename> struct tvec2;
-
-namespace math {
-
-template <typename T>
-struct tref2
+void mouse::handle_motion(const eve::vec2i& position)
 {
-  tref2(T& x, T& y);
-  tref2(const tref2&);
+  m_position = position;
+}
 
-  tref2& operator=(const tref2&);
-  template <typename U>
-  tref2& operator=(const tvec2<U>&);
-
-  T& x;
-  T& y;
-};
-
-} // math
-
-template <typename T>
-struct tvec2
+void mouse::handle_click(button btn, bool state)
 {
-  union
-  {
-    struct { T x, y; };
-    struct { T w, h; };
-  };
+  m_buttons[eve::size(btn)] = state;
+}
 
-  tvec2();
-  template <typename U>
-  explicit tvec2(const U& x);
-  template <typename U, typename V>
-  explicit tvec2(const U& x, const V& y);
-  template <typename U>
-  explicit tvec2(const tvec2<U>& v);
-  template <typename U>
-  tvec2(const math::tref2<U>& v);
-
-  // This macro will generate all possible swizzle combinations of x and y.
-  __eve_gen_swizzle2(x, y)
-  
-  T& operator[](eve::size index) { return (&x)[index]; }
-  const T& operator[](eve::size index) const { return (&x)[index]; }
-
-  template <typename U> tvec2<T>& operator+=(const U& v);
-  template <typename U> tvec2<T>& operator+=(const tvec2<U>& v);
-  template <typename U> tvec2<T>& operator-=(const U& v);
-  template <typename U> tvec2<T>& operator-=(const tvec2<U>& v);
-  template <typename U> tvec2<T>& operator*=(const U& v);
-  template <typename U> tvec2<T>& operator*=(const tvec2<U>& v);
-  template <typename U> tvec2<T>& operator/=(const U& v);
-  template <typename U> tvec2<T>& operator/=(const tvec2<U>& v);
-  template <typename U> tvec2<T>& operator=(const tvec2<U>& v);
-
-  bool operator==(const tvec2& v) const;
-  bool operator!=(const tvec2& v) const;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-typedef tvec2<real> vec2;
-typedef tvec2<int16> vec2s;
-typedef tvec2<uint16> vec2us;
-typedef tvec2<int32> vec2i;
-typedef tvec2<uint32> vec2u;
-typedef tvec2<float> vec2f;
-typedef tvec2<double> vec2d;
-
-} // eve
-
-/** @} */
-
-#include "vec2.inl"
+mouse::mouse()
+{
+  memset(&m_buttons, 0, sizeof(m_buttons));
+}

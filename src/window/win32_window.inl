@@ -28,6 +28,7 @@
 #pragma once
 
 #include "eve/window.h"
+#include "eve/math/detail/vec2.h"
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -158,15 +159,31 @@ void terminate_window()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+enum
+{
+  FLAG_OPEN = eve_bit(0),
+  FLAG_CURSOR_HIDDEN = eve_bit(1),
+  FLAG_FULLSCREEN = eve_bit(2),
+};
+
+class window_impl;
+
 struct user_data
 {
   eve::window::event* event;
-  bool fullscreen;
+  window_impl* window;
 };
 
 class window_impl
 {
 public:
+  eve::vec2i old_cursor;
+
+  window_impl()
+    : m_flags(0)
+  {
+  }
+
   void open(const eve::window::config& config, const char* title)
   {
     // Calculate window dimensions
@@ -322,6 +339,9 @@ public:
 
     if (glewInit() != GLEW_OK)
       throw std::runtime_error("Failed to initialize GL extensions.");
+
+    eve::flag(m_flags, FLAG_OPEN, true);
+    eve::flag(m_flags, FLAG_FULLSCREEN, config.fullscreen);
   }
 
   void title(const std::string& title)
@@ -329,11 +349,11 @@ public:
     SetWindowText(m_handle, title.c_str());
   }
 
-  void poll(eve::window::event& e, bool fullscreen)
+  void poll(eve::window::event& e)
   {
     user_data data;
     data.event = &e;
-    data.fullscreen = fullscreen;
+    data.window = this;
     e.type = e.NONE;
     SetWindowLongPtr(m_handle, GWLP_USERDATA, (LONG)&data);
     MSG msg;
@@ -356,15 +376,15 @@ public:
     SwapBuffers(m_DC);
   }
 
-  void close(bool fullscreen, bool mousehidden)
+  void close()
   {
     if (!m_handle)
       return;
 
-    if (fullscreen)
+    if (fullscreen())
       ChangeDisplaySettings(nullptr, 0);
 
-    if (mousehidden)
+    if (cursor_hidden())
       hide_system_cursor(false);
 
     if (m_context)
@@ -385,12 +405,30 @@ public:
       DestroyWindow(m_handle);
       m_handle = nullptr;;
     }
+    
+    m_flags = 0;
+  }
+
+  bool opened() const
+  {
+    return eve::flag(m_flags, FLAG_OPEN);
+  }
+
+  bool fullscreen() const
+  {
+    return eve::flag(m_flags, FLAG_FULLSCREEN);
+  }
+
+  bool cursor_hidden() const
+  {
+    return eve::flag(m_flags, FLAG_CURSOR_HIDDEN);
   }
 
 private:
   HWND m_handle;
   HDC m_DC;
   HGLRC m_context;
+  uint8 m_flags; // open? cursor captured? fullscreen?
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -497,8 +535,8 @@ static eve::key translate_key(WPARAM wParam, LPARAM lParam)
     {
       const DWORD scancode = MapVirtualKey(VK_RSHIFT, 0);
       if ((DWORD) ((lParam & 0x01ff0000) >> 16) == scancode)
-        return key::LEFT_SHIFT;
-      return key::RIGHT_SHIFT;
+        return key::RIGHT_SHIFT;
+      return key::LEFT_SHIFT;
     }
 
     case VK_CONTROL:
@@ -628,7 +666,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam)
         case SC_SCREENSAVE:
         case SC_MONITORPOWER:
         {
-          if (data->fullscreen)
+          if (data->window->fullscreen())
           {
               // We are running in fullscreen mode, so disallow
               // screen saver and screen blanking
@@ -665,9 +703,82 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam)
         e->type = window::event::NONE;
       break;
 
-    //case WM_LBUTTONDOWN:
-    //  e->type = window::event::NONE;
-    //  break;
+    case WM_MOUSEMOVE:
+    {
+      eve::vec2i new_cursor;
+      new_cursor.x = LOWORD(lParam);
+      new_cursor.y = HIWORD(lParam);
+      
+      if (new_cursor != data->window->old_cursor)
+      {
+        eve::vec2i cursor;
+
+        if (data->window->cursor_hidden())
+        {
+          //if (_glfw.focusedWindow != window)
+          //    return 0;
+          cursor = new_cursor - data->window->old_cursor;
+        }
+        else cursor = new_cursor;
+
+        data->window->old_cursor = new_cursor;
+        //window->win32.cursorCentered = GL_FALSE;
+
+        e->type = window::event::MOUSEMOTION;
+        e->mouse.cursor = new_cursor;
+      }
+      return 0;
+    }
+
+    case WM_LBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+    case WM_XBUTTONDOWN:
+    {
+      SetCapture(hWnd);
+      e->type = window::event::MOUSEDOWN;
+
+      if (uMsg == WM_LBUTTONDOWN)
+        e->mouse.button = mouse::button::LEFT;
+      else if (uMsg == WM_RBUTTONDOWN)
+        e->mouse.button = mouse::button::RIGHT;
+      else if (uMsg == WM_MBUTTONDOWN)
+        e->mouse.button = mouse::button::MIDDLE;
+      else
+      {
+        if (HIWORD(wParam) == XBUTTON1)
+          e->mouse.button = mouse::button::BUTTON_4;
+        else if (HIWORD(wParam) == XBUTTON2)
+          e->mouse.button = mouse::button::BUTTON_5;
+        return TRUE;
+      }
+      return 0;
+    }
+
+    case WM_LBUTTONUP:
+    case WM_RBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_XBUTTONUP:
+    {
+      ReleaseCapture();
+      e->type = window::event::MOUSEUP;
+
+      if (uMsg == WM_LBUTTONUP)
+        e->mouse.button = mouse::button::LEFT;
+      else if (uMsg == WM_RBUTTONUP)
+        e->mouse.button = mouse::button::RIGHT;
+      else if (uMsg == WM_MBUTTONUP)
+        e->mouse.button = mouse::button::MIDDLE;
+      else
+      {
+        if (HIWORD(wParam) == XBUTTON1)
+          e->mouse.button = mouse::button::BUTTON_4;
+        else if (HIWORD(wParam) == XBUTTON2)
+          e->mouse.button = mouse::button::BUTTON_5;
+        return TRUE;
+      }
+      return 0;
+    }
 
     case WM_SIZE:
       e->size.width = LOWORD(lParam);

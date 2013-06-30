@@ -287,6 +287,18 @@ eve_inline tvec2<T> operator/(const tvec2<T>& v1, const tvec2<U>& v2)
     v1.y / T(v2.y));
 }
 
+template<typename T>
+eve_inline bool tvec2<T>::operator==(const tvec2& v) const
+{
+  return x == v.x && y == v.y;
+}
+
+template<typename T>
+eve_inline bool tvec2<T>::operator!=(const tvec2& v) const
+{
+  return x != v.x || y != v.y;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
