@@ -30,8 +30,13 @@
 
 using namespace eve;
 
+system_error::system_error(const std::string& message)
+  : std::runtime_error(message)
+{
+}
+
 system_error::system_error(const std::string& message, int errorID)
-  : std::runtime_error(message), m_errorID(errorID)
+  : std::runtime_error(message + " System error ID: " + std::to_string(errorID) + "."), m_errorID(errorID)
 {
 }
 

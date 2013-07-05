@@ -26,32 +26,19 @@
 \******************************************************************************/
 
 #include "eve/socket.h"
-#include "eve/exceptions.h"
 
 #ifdef EVE_WINDOWS
 
 #include <WinSock2.h>
 
 // Namespace used for wrapping system functions in order to avoid naming collision
-inline SOCKET sys_socket(int a, int b, int c)
-{
-  return socket(a, b, c);
-}
-
-inline int sys_listen(SOCKET socket, int conns)
-{
-  return listen(socket, conns);
-}
-
-inline int sys_accept(SOCKET socket, sockaddr* addr, int* len)
-{
-  return accept(socket, addr, len);
-}
-
-inline int sys_connect(SOCKET s, sockaddr* name, int namelen)
-{
-  return connect(s, name, namelen);
-}
+inline SOCKET sys_socket(int a, int b, int c) { return socket(a, b, c); }
+inline int sys_listen(SOCKET socket, int conns) { return listen(socket, conns); }
+inline int sys_accept(SOCKET socket, sockaddr* addr, int* len) { return accept(socket, addr, len); }
+inline int sys_connect(SOCKET s, sockaddr* name, int namelen) { return connect(s, name, namelen); }
+inline int sys_send(SOCKET s, const char* buf, int len, int flags) { return send(s, buf, len, flags); }
+inline int sys_recv(SOCKET s, char* buf, int len, int flags) { return recv(s, buf, len, flags); }
+inline int sys_shutdown(SOCKET s, int how) { return shutdown(s, how); }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -101,7 +88,7 @@ void eve::socket::address::set(const std::string& hostname, int port, domain dom
   // resolve hostname
   hostent* he;
   if ( (he = gethostbyname(hostname.c_str()) ) == NULL )
-    throw eve::system_error("Could not resolve hostname '" + hostname + "'.");
+    throw eve::socket_error("Could not resolve hostname '" + hostname + "'.");
 
   // copy the network address to sockaddr_in structure
   memcpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);
@@ -139,7 +126,7 @@ eve::socket::socket(type type, domain domain)
   );
 
   if (m_pimpl.as<SOCKET>() == INVALID_SOCKET)
-    throw eve::system_error("Could not create new socket.", WSAGetLastError());
+    throw eve::socket_error("Could not create new socket.", WSAGetLastError());
 }
 
 eve::socket::socket(socket&& rhs)
@@ -157,7 +144,7 @@ eve::socket::~socket()
 {
   if (m_pimpl.as<SOCKET>() != 0)
   {
-    close();
+    shutdown();
     closesocket(m_pimpl.as<SOCKET>());
   }
 }
@@ -165,7 +152,7 @@ eve::socket::~socket()
 void eve::socket::listen(eve::uint32 port, eve::size backlog)
 {
   if (m_state != state::closed)
-    throw std::runtime_error("Cannot make socket listen, not closed.");
+    throw eve::socket_error("Cannot make socket listen, not closed.");
 
   make_blocking(true);
   m_address.set(port, m_address.m_domain);
@@ -173,10 +160,10 @@ void eve::socket::listen(eve::uint32 port, eve::size backlog)
   auto& sa = m_address.m_pimpl.as<SOCKADDR_IN>();
 
   if (bind(m_pimpl.as<SOCKET>(), (sockaddr*)&sa, sizeof(address)) < 0)
-    throw eve::system_error("Cannot bind socket to address.", WSAGetLastError());
+    throw eve::socket_error("Cannot bind socket to address.", WSAGetLastError());
 
   if (sys_listen(m_pimpl.as<SOCKET>(), backlog))
-    throw eve::system_error("Cannot set socket in listen mode.", WSAGetLastError());
+    throw eve::socket_error("Cannot set socket in listen mode.", WSAGetLastError());
 
   m_state = state::listening;
 }
@@ -188,19 +175,37 @@ eve::socket eve::socket::accept()
   return client;
 }
 
-void eve::socket::connect(const std::string& host, uint32 port)
+void eve::socket::connect(const address& address)
 {
-  if (m_state != state::closed)
-    throw std::runtime_error("Cannot connect socket, not closed.");
-  
-  make_blocking(true);
-  auto& sock = m_pimpl.as<SOCKET>();
+  do_connect(address, true);
+}
 
-  m_state = state::connecting;
-  m_address.set(host, port);
-  auto result = sys_connect(sock, &m_address.m_pimpl.as<sockaddr>(), sizeof(sockaddr_in));
-  if (result == SOCKET_ERROR)
-    throw eve::system_error("An error occurred while connecting socket.", WSAGetLastError());
+eve::size eve::socket::send(const char* data, eve::size size)
+{
+  do_send(data, size, true);
+  return size;
+}
+
+void eve::socket::send_all(const char* data, eve::size size)
+{
+  const char* ptr = data;
+  const char* end = data + size;
+  while (ptr < end)
+    ptr += send(data, end - ptr);
+}
+
+eve::size eve::socket::receive(char* buffer, eve::size size)
+{
+  do_receive(buffer, size, true);
+  return size;
+}
+
+void eve::socket::receive_all(char* buffer, eve::size size)
+{
+  char* ptr = buffer;
+  char* end = buffer + size;
+  while (ptr < end)
+    ptr += receive(ptr, end - ptr);
 }
 
 bool eve::socket::try_accept(socket& client)
@@ -208,18 +213,28 @@ bool eve::socket::try_accept(socket& client)
   return do_accept(client, false);
 }
 
-void eve::socket::close()
+bool eve::socket::try_send(const char* data, eve::size& size)
+{
+  return do_send(data, size, false);
+}
+
+bool eve::socket::try_receive(char* buffer, eve::size& size)
+{
+  return do_receive(buffer, size, false);
+}
+
+void eve::socket::shutdown()
 {
   if (m_state != state::closed)
   {
-    shutdown(m_pimpl.as<SOCKET>(), 2);
+    sys_shutdown(m_pimpl.as<SOCKET>(), 2);
     m_state = state::closed;
   }
 }
 
 eve::socket& eve::socket::operator=(socket&& rhs)
 {
-  close();
+  shutdown();
   m_type = rhs.m_type;
   m_state = rhs.m_state;
   m_address = rhs.m_address;
@@ -231,10 +246,28 @@ eve::socket& eve::socket::operator=(socket&& rhs)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+bool eve::socket::do_connect(const address& address, bool block)
+{
+  if (m_state != state::closed)
+    throw eve::socket_error("Cannot connect socket, not closed.");
+  
+  make_blocking(block);
+  auto& sock = m_pimpl.as<SOCKET>();
+
+  m_address = address;
+  auto result = sys_connect(sock, &m_address.m_pimpl.as<sockaddr>(), sizeof(sockaddr_in));
+  
+  if (check_result(result, block, "An error occurred while connecting socket."))
+    return false;
+
+  m_state = state::connected;
+  return true;
+}
+
 bool eve::socket::do_accept(socket& client, bool block)
 {
   if (m_state != state::listening)
-    throw std::runtime_error("Cannot connect socket, not in listening state.");
+    throw eve::socket_error("Cannot connect socket, not in listening state.");
 
   make_blocking(block);
   auto& sock = m_pimpl.as<SOCKET>();
@@ -246,21 +279,60 @@ bool eve::socket::do_accept(socket& client, bool block)
     &client.m_address.m_pimpl.as<sockaddr>(),
     &size);
 
-  if (client_sock == INVALID_SOCKET)
-  {
-    auto error = WSAGetLastError();
-    eve_assert(!(block && error == WSAEWOULDBLOCK));
-    if (error == WSAEWOULDBLOCK)
-      return false;
-    else
-      throw eve::system_error("An error occurred while accepting new clients.", WSAGetLastError());
-  }
+  if (check_result(client_sock, block, "An error occurred while accepting new clients."))
+    return false;
 
   client.m_type = m_type;
   client.m_state = state::connected;
   m_address.m_domain = m_address.m_domain;
   m_blocking = false;
   return true;
+}
+
+bool eve::socket::do_send(const char* data, eve::size& size, bool block)
+{
+  if (m_state != state::connected)
+    throw eve::socket_error("Cannot send data through socket, not connected.");
+  
+  make_blocking(block);
+  auto& sock = m_pimpl.as<SOCKET>();
+
+  auto result = sys_send(sock, data, size, 0);
+  if (check_result(result, block, "An error occurred while sending data."))
+    return false;
+
+  size = result;
+  return true;
+}
+
+bool eve::socket::do_receive(char* buffer, eve::size& size, bool block)
+{
+  if (m_state != state::connected)
+    throw eve::socket_error("Cannot receive data through socket, not connected.");
+  
+  make_blocking(block);
+  auto& sock = m_pimpl.as<SOCKET>();
+
+  auto result = sys_recv(sock, buffer, size, 0);
+  if (check_result(result, block, "An error occurred while receiving data."))
+    return false;
+
+  size = result;
+  return true;
+}
+
+bool eve::socket::check_result(int result, bool block, const std::string& errormsg)
+{
+  if (result == SOCKET_ERROR)
+  {
+    auto error = WSAGetLastError();
+    eve_assert(!(block && error == WSAEWOULDBLOCK));
+    if (error == WSAEWOULDBLOCK)
+      return true;
+    else
+      throw eve::socket_error("An error occurred while accepting new clients.", WSAGetLastError());
+  }
+  return false;
 }
 
 void eve::socket::make_blocking(bool blocking)
