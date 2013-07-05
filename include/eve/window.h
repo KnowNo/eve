@@ -39,7 +39,7 @@
 
 namespace eve {
 
-class window
+class window : uncopyable
 {
 public:
   struct config

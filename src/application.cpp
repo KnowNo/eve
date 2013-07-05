@@ -32,13 +32,22 @@ using namespace eve;
 
 extern void initialize_window();
 extern void terminate_window();
+extern void initialize_net();
+extern void terminate_net();
 
-application::application()
+application::application(eve::flagset<application::module> modules)
+  : m_modules(modules)
 {
-  initialize_window();
+  if (modules.isset(module::graphics))
+    initialize_window();
+  if (modules.isset(module::networking))
+    initialize_net();
 }
 
 application::~application()
 {
-  terminate_window();
+  if (m_modules.isset(module::graphics))
+    terminate_window();
+  if (m_modules.isset(module::networking))
+    terminate_net();
 }

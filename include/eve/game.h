@@ -27,35 +27,102 @@
 
 #pragma once
 
-#include "../platform.h"
+#include "application.h"
+#include "window.h"
+#include <unordered_map>
+
+/** \addtogroup Lib
+  * @{
+  */
 
 namespace eve {
 
-template <typename T>
-struct tofloat
+class game
 {
-  typedef float type;
-};
+public:
+  struct time;
+  class state;
 
-template<>
-struct tofloat<eve::int64>
-{
-  typedef double type;
-};
+  game();
+  ~game();
 
-template<>
-struct tofloat<eve::uint64>
-{
-  typedef double type;
+  eve::window& window() { return m_window; }
+  const eve::window& window() const { return m_window; }
+
+  template <typename State, typename... Args>
+  void create_state(Args&&... args)
+  {
+    const auto stateID = eve::type_id<State>();
+    auto it = m_states.find(stateID);
+    if (it != m_states.end())
+      throw std::runtime_error("State with ID " + std::to_string(stateID) + " already created.");
+    it = m_states.insert(it, std::make_pair(eve::type_id<State>(), new State(this)));
+  }
+
+  template <typename State, typename... Args>
+  void run(Args&&... args)
+  {
+    eve_assert(!m_top);
+    initialize();
+    transit<State>(std::forward<Args>(args)...);
+    mainloop();
+  };
+
+  template <typename State, typename... Args>
+  void transit(Args&&... args)
+  {
+    const auto stateID = eve::type_id<State>();
+    auto it = m_states.find(stateID);
+    if (it == m_states.end())
+      throw std::runtime_error("State with id " + std::to_string(stateID) + " not created.");
+    static_cast<State*>(it->second)->setup(std::forward<Args>(args)...);
+    transit(it->second);
+  }
+
+private:
+  void initialize();
+  void mainloop();
+  void transit(state*);
+
+  eve::application m_app;
+  eve::window m_window;
+  std::unordered_map<eve::id, state*> m_states;
+  state* m_top;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <typename T>
-eve::id type_id()
+struct game::time
 {
-  static eve::id id = eve::unique_id();
-  return id;
-}
+  float elapsed;
+  unsigned fps; 
+  bool fps_changed;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class game::state
+{
+public:
+  virtual ~state() {}
+
+  virtual void update(const game::time& time) = 0;
+  virtual void draw(const game::time& time) const = 0;
+
+  virtual void setup() {}
+  virtual void on_activated() {}
+  virtual void on_deactivated() {}
+  
+protected:
+  state(game* game);
+  game* game() const { return m_game; }
+
+private:
+  eve::game* m_game;
+  state* m_next;
+  friend eve::game;
+};
 
 } // eve
+
+/** }@ */

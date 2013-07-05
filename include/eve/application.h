@@ -27,6 +27,10 @@
 
 #pragma once
 
+#include "eve/platform.h"
+#include "eve/utils.h"
+#include <functional>
+
 /** \addtogroup Lib
   * @{
   */
@@ -34,17 +38,29 @@
 namespace eve
 {
 
-/// A convenient entity for managing subsystems initialization and termination
-/// automatically.
+/** A convenient entity for managing subsystems initialization and termination
+  * automatically. */
 class application
 {
 public:
-  application();
+  enum class module : eve::uint8
+  {
+    all = 0xFF,
+    graphics = eve_bit(1),
+    networking = eve_bit(2),
+  };
+
+  application(eve::flagset<application::module> modules = module::all);
   ~application();
 
 private:
-
+  eve::flagset<application::module> m_modules;
 };
+
+inline eve::flagset<application::module> operator|(application::module a, application::module b)
+{
+  return eve::flagset<application::module>() | a | b;
+}
 
 } // eve
 

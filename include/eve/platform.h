@@ -70,6 +70,7 @@ typedef unsigned int uint32;
 typedef long long int64;
 typedef unsigned long long uint64;
 typedef uint32 size;
+typedef uint32 id;
 
 #ifdef EVE_32
 typedef uint32 uintptr;
@@ -86,6 +87,8 @@ enum class arithmetic_type
 };
 
 size arithmetic_type_size(arithmetic_type type);
+
+size unique_id();
 
 } // eve
 

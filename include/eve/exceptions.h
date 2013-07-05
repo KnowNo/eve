@@ -38,7 +38,11 @@ namespace eve {
 class system_error : public std::runtime_error
 {
 public:
-  system_error(const std::string& message) throw();
+  system_error(const std::string& message, int errorID = 0) throw();
+  int errorID() const { return m_errorID; }
+
+private:
+  int m_errorID;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

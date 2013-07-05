@@ -25,37 +25,84 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#pragma once
+#include "eve/game.h"
+#include "eve/resource.h"
+#include "eve/time.h"
 
-#include "../platform.h"
+using namespace eve;
 
-namespace eve {
-
-template <typename T>
-struct tofloat
+game::game()
+  : m_app(eve::application::module::all)
+  , m_top(nullptr)
 {
-  typedef float type;
-};
+}
 
-template<>
-struct tofloat<eve::int64>
+game::~game()
 {
-  typedef double type;
-};
+}
 
-template<>
-struct tofloat<eve::uint64>
+void game::initialize()
 {
-  typedef double type;
-};
+  m_window.open();
+}
+
+void game::mainloop()
+{
+  stopwatch stopwatch;
+  fpscounter fps;
+  window::event e;
+  bool running = true;
+  
+  game::time time;
+  time.elapsed = 0;
+  time.fps_changed = false;
+  time.fps = 0;
+  
+  while (true)
+  {
+    while (m_window.poll(e))
+    {
+      if (e.type == window::event::QUIT)
+        running = false;
+    }
+
+    if (!running)
+      break;
+
+    // Make our window active
+    m_window.activate();
+
+    // Update logic
+    m_top->update(time);
+
+    // Render scene
+    m_top->draw(time);
+
+    // Swap buffers and display rendered frame
+    m_window.display();
+
+    // Update time measuring
+    eve::time::fps_wait((float)stopwatch.elapsed(), 60);
+    stopwatch.reset();
+    time.fps_changed = fps.tick();
+    time.fps = fps.value();
+  };
+}
+
+void game::transit(state* state)
+{
+  if (m_top)
+    m_top->on_deactivated();
+
+  state->m_next = m_top;
+  m_top = state;
+
+  m_top->on_activated();
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <typename T>
-eve::id type_id()
+game::state::state(eve::game* game)
+  : m_game(game)
 {
-  static eve::id id = eve::unique_id();
-  return id;
 }
-
-} // eve

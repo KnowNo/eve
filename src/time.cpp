@@ -105,11 +105,10 @@ fpscounter::fpscounter()
 bool fpscounter::tick()
 {
   ++m_count;
-  if (m_stopwatch.elapsed() > 1.0f)
+  if (m_stopwatch.elapsed() >= 1.0f)
   {
-    m_fps = unsigned(float(m_count) / float(m_stopwatch.elapsed()));
+    m_fps = unsigned(float(m_count) / (float)m_stopwatch.reset());
     m_count = 0;
-    m_stopwatch.reset();
     return true;
   }
   return false;

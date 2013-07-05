@@ -40,22 +40,34 @@
 namespace eve
 {
 
-/** Sets the flag bit @p flag to boolean @p value in flag set @p flags. */
-template <typename T, typename Q>
-inline void flag(T& flags, Q flag, bool value)
+template <typename T>
+class flagset
 {
-  if (value)
-    flags |= static_cast<T>(flag);
-  else
-    flags &= ~static_cast<T>(flag);
-}
+public:
+  flagset() : m_flags(0) { }
+  flagset(T flag): m_flags(type(flag)) { }
+  bool isset(T flag) const { return (m_flags & type(flag)) != 0; }
+  void set(T flag) { m_flags |= type(flag); }
+  void set(T flag, bool value) { if (value) this->set(flag); else reset(flag); }
+  void reset(T flag) { m_flags &= ~type(flag); }
+  void reset() { m_flags = 0; }
+  flagset operator|(T flag)
+  {
+    return flagset(type(flag) | m_flags);
+  }
+  flagset operator|(flagset rhs)
+  {
+    return flagset(rhs.m_flags | m_flags);
+  }
 
-/** @returns true if the flag bit @p flag is 1 in @p flags. */
-template <typename T, typename Q>
-inline bool flag(T flags, Q flag)
-{
-  return (flags & static_cast<T>(flag)) != 0;
-}
+private:
+  typedef typename std::conditional<std::is_enum<T>::value,
+    typename std::underlying_type<T>::type,
+    T
+  >::type type;
+  flagset(type flags) : m_flags(flags) { }
+  type m_flags;
+};
 
 /** Tries to open an ifstream at @p path and checks that it's good.
     @note If not good throws an eve::file_not_found_error. */

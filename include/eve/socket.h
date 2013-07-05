@@ -27,35 +27,89 @@
 
 #pragma once
 
-#include "../platform.h"
+#include "storage.h"
+#include <string>
+
+/** \addtogroup Net
+  * @{
+  */
 
 namespace eve {
 
-template <typename T>
-struct tofloat
+class socket : uncopyable
 {
-  typedef float type;
+public:
+  enum class type : uint8
+  {
+    stream,
+    datagram
+  };
+
+  enum class domain: uint8
+  {
+    IPv4,
+    IPv6
+  };
+
+  typedef enum class state : uint8
+  {
+    invalid,
+    closed,
+    listening,
+    connecting,
+    connected,
+    connection_failed
+  } state_;
+
+  class address
+  {
+  public:
+    address(domain domain);
+    address(int port, domain domain = domain::IPv4);
+    address(const std::string& hostname, int port, domain domain = domain::IPv4);
+
+    void set(int port, domain domain = domain::IPv4);
+    void set(const std::string& hostname, int port, domain domain = domain::IPv4);
+
+  private:
+    void initialize(domain domain);
+
+    domain m_domain;
+    fixed_storage<24> m_pimpl;
+    friend class socket;
+  };
+
+  socket();
+  socket(type type, domain domain = domain::IPv4);
+  socket(socket&& rhs);
+  ~socket();
+
+  state state() const { return m_state; }
+
+  /** Makes this socket listen for connections at port @p and any address.
+      @param backlog is the maximum number of pending connections waiting to be accepted. */
+  void listen(eve::uint32 port, eve::size backlog);
+  socket accept();
+  void connect(const std::string& host, uint32 port);
+
+  bool try_accept(socket& client);
+
+
+  void close();
+  
+  socket& operator=(socket&& rhs);
+
+private:
+  bool do_accept(socket& client, bool block);
+  void make_blocking(bool blocking);
+  
+  type m_type;
+  state_ m_state;
+  address m_address;
+  bool m_blocking;
+  fixed_storage<eve_sizeof(void*), eve_alignof(void*)> m_pimpl;
 };
-
-template<>
-struct tofloat<eve::int64>
-{
-  typedef double type;
-};
-
-template<>
-struct tofloat<eve::uint64>
-{
-  typedef double type;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-template <typename T>
-eve::id type_id()
-{
-  static eve::id id = eve::unique_id();
-  return id;
-}
 
 } // eve
+
+/** }@ */

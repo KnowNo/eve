@@ -159,12 +159,7 @@ void terminate_window()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-enum
-{
-  FLAG_OPEN = eve_bit(0),
-  FLAG_CURSOR_HIDDEN = eve_bit(1),
-  FLAG_FULLSCREEN = eve_bit(2),
-};
+
 
 class window_impl;
 
@@ -178,11 +173,6 @@ class window_impl
 {
 public:
   eve::vec2i old_cursor;
-
-  window_impl()
-    : m_flags(0)
-  {
-  }
 
   void open(const eve::window::config& config, const char* title)
   {
@@ -340,8 +330,8 @@ public:
     if (glewInit() != GLEW_OK)
       throw std::runtime_error("Failed to initialize GL extensions.");
 
-    eve::flag(m_flags, FLAG_OPEN, true);
-    eve::flag(m_flags, FLAG_FULLSCREEN, config.fullscreen);
+    m_flags.set(flags::open);
+    m_flags.set(flags::fullscreen, config.fullscreen);
   }
 
   void title(const std::string& title)
@@ -406,29 +396,36 @@ public:
       m_handle = nullptr;;
     }
     
-    m_flags = 0;
+    m_flags.reset();
   }
 
   bool opened() const
   {
-    return eve::flag(m_flags, FLAG_OPEN);
+    return m_flags.isset(flags::open);
   }
 
   bool fullscreen() const
   {
-    return eve::flag(m_flags, FLAG_FULLSCREEN);
+    return m_flags.isset(flags::fullscreen);
   }
 
   bool cursor_hidden() const
   {
-    return eve::flag(m_flags, FLAG_CURSOR_HIDDEN);
+    return m_flags.isset(flags::cursor_hidde);
   }
 
 private:
+  enum class flags : eve::uint8
+  {
+    open = eve_bit(0),
+    cursor_hidde = eve_bit(1),
+    fullscreen = eve_bit(2),
+  };
+
   HWND m_handle;
   HDC m_DC;
   HGLRC m_context;
-  uint8 m_flags; // open? cursor captured? fullscreen?
+  eve::flagset<flags> m_flags; // open? cursor captured? fullscreen?
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

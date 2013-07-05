@@ -76,6 +76,9 @@ namespace eve {
 template <typename T>
 struct tofloat;
 
+template <typename T>
+eve::size type_id();
+
 } // eve
 
 /** @} */

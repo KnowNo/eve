@@ -1,0 +1,277 @@
+/******************************************************************************\
+* This source file is part of the 'eve' framework.                             *
+* (A linear, elegant, modular engine for rapid game development)               *
+*                                                                              *
+* The MIT License (MIT)                                                        *
+*                                                                              *
+* Copyright (c) 2013                                                           *
+*                                                                              *
+* Permission is hereby granted, free of charge, to any person obtaining a copy *
+* of this software and associated documentation files (the "Software"), to deal*
+* in the Software without restriction, including without limitation the rights *
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell    *
+* copies of the Software, and to permit persons to whom the Software is        *
+* furnished to do so, subject to the following conditions:                     *
+*                                                                              *
+* The above copyright notice and this permission notice shall be included in   *
+* all copies or substantial portions of the Software.                          *
+*                                                                              *
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR   *
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,     *
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  *
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER       *
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,*
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN    *
+* THE SOFTWARE.                                                                *
+\******************************************************************************/
+
+#include "eve/socket.h"
+#include "eve/exceptions.h"
+
+#ifdef EVE_WINDOWS
+
+#include <WinSock2.h>
+
+// Namespace used for wrapping system functions in order to avoid naming collision
+inline SOCKET sys_socket(int a, int b, int c)
+{
+  return socket(a, b, c);
+}
+
+inline int sys_listen(SOCKET socket, int conns)
+{
+  return listen(socket, conns);
+}
+
+inline int sys_accept(SOCKET socket, sockaddr* addr, int* len)
+{
+  return accept(socket, addr, len);
+}
+
+inline int sys_connect(SOCKET s, sockaddr* name, int namelen)
+{
+  return connect(s, name, namelen);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static WSADATA s_WSAdata;
+
+void initialize_net()
+{
+  WSAStartup(MAKEWORD(2, 0), &s_WSAdata);
+}
+
+void terminate_net()
+{
+  WSACleanup();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+eve::socket::address::address(domain domain)
+{
+  initialize(domain); 
+}
+
+eve::socket::address::address(int port, domain domain)
+{
+  set(port, domain);
+}
+
+eve::socket::address::address(const std::string& hostname, int port, domain domain)
+{
+  set(hostname, port, domain);
+}
+
+void eve::socket::address::set(int port, domain domain)
+{
+  initialize(domain);
+
+  auto& addr = m_pimpl.as<SOCKADDR_IN>(); 
+  addr.sin_addr.s_addr = INADDR_ANY;
+  addr.sin_port = htons(port);
+}
+
+void eve::socket::address::set(const std::string& hostname, int port, domain domain)
+{
+  set(port, domain);
+
+  auto& addr = m_pimpl.as<SOCKADDR_IN>(); 
+  // resolve hostname
+  hostent* he;
+  if ( (he = gethostbyname(hostname.c_str()) ) == NULL )
+    throw eve::system_error("Could not resolve hostname '" + hostname + "'.");
+
+  // copy the network address to sockaddr_in structure
+  memcpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);
+}
+
+void eve::socket::address::initialize(domain domain)
+{
+  m_domain = domain;
+  m_pimpl.construct<SOCKADDR_IN>();
+  auto& addr = m_pimpl.as<SOCKADDR_IN>(); 
+  memset(&addr, 0, sizeof(SOCKADDR_IN));
+  addr.sin_family = m_domain == domain::IPv4 ? AF_INET : AF_INET6;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+eve::socket::socket()
+  : m_state(state::invalid)
+  , m_address(domain::IPv4)
+  , m_blocking(true)
+{
+  m_pimpl.as<SOCKET>() = 0;
+}
+
+eve::socket::socket(type type, domain domain)
+  : m_type(type)
+  , m_state(state::closed)
+  , m_address(domain)
+  , m_blocking(true)
+{
+  m_pimpl.as<SOCKET>() = sys_socket(
+    domain == domain::IPv4 ? AF_INET : AF_INET6,
+    type == type::stream ? SOCK_STREAM : SOCK_DGRAM,
+    0
+  );
+
+  if (m_pimpl.as<SOCKET>() == INVALID_SOCKET)
+    throw eve::system_error("Could not create new socket.", WSAGetLastError());
+}
+
+eve::socket::socket(socket&& rhs)
+  : m_address(rhs.m_address.m_domain)
+{
+  m_type = rhs.m_type;
+  m_state = rhs.m_state;
+  m_blocking = rhs.m_blocking;
+  m_pimpl.as<SOCKET>() = rhs.m_pimpl.as<SOCKET>();
+  rhs.m_pimpl.as<SOCKET>() = 0;
+  rhs.m_state = state::invalid;
+}
+
+eve::socket::~socket()
+{
+  if (m_pimpl.as<SOCKET>() != 0)
+  {
+    close();
+    closesocket(m_pimpl.as<SOCKET>());
+  }
+}
+
+void eve::socket::listen(eve::uint32 port, eve::size backlog)
+{
+  if (m_state != state::closed)
+    throw std::runtime_error("Cannot make socket listen, not closed.");
+
+  make_blocking(true);
+  m_address.set(port, m_address.m_domain);
+
+  auto& sa = m_address.m_pimpl.as<SOCKADDR_IN>();
+
+  if (bind(m_pimpl.as<SOCKET>(), (sockaddr*)&sa, sizeof(address)) < 0)
+    throw eve::system_error("Cannot bind socket to address.", WSAGetLastError());
+
+  if (sys_listen(m_pimpl.as<SOCKET>(), backlog))
+    throw eve::system_error("Cannot set socket in listen mode.", WSAGetLastError());
+
+  m_state = state::listening;
+}
+
+eve::socket eve::socket::accept()
+{
+  socket client;
+  do_accept(client, true);
+  return client;
+}
+
+void eve::socket::connect(const std::string& host, uint32 port)
+{
+  if (m_state != state::closed)
+    throw std::runtime_error("Cannot connect socket, not closed.");
+  
+  make_blocking(true);
+  auto& sock = m_pimpl.as<SOCKET>();
+
+  m_state = state::connecting;
+  m_address.set(host, port);
+  auto result = sys_connect(sock, &m_address.m_pimpl.as<sockaddr>(), sizeof(sockaddr_in));
+  if (result == SOCKET_ERROR)
+    throw eve::system_error("An error occurred while connecting socket.", WSAGetLastError());
+}
+
+bool eve::socket::try_accept(socket& client)
+{
+  return do_accept(client, false);
+}
+
+void eve::socket::close()
+{
+  if (m_state != state::closed)
+  {
+    shutdown(m_pimpl.as<SOCKET>(), 2);
+    m_state = state::closed;
+  }
+}
+
+eve::socket& eve::socket::operator=(socket&& rhs)
+{
+  close();
+  m_type = rhs.m_type;
+  m_state = rhs.m_state;
+  m_address = rhs.m_address;
+  m_pimpl.as<SOCKET>() = rhs.m_pimpl.as<SOCKET>();
+  rhs.m_state = state::invalid;
+  rhs.m_pimpl.as<SOCKET>() = 0;
+  return *this;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool eve::socket::do_accept(socket& client, bool block)
+{
+  if (m_state != state::listening)
+    throw std::runtime_error("Cannot connect socket, not in listening state.");
+
+  make_blocking(block);
+  auto& sock = m_pimpl.as<SOCKET>();
+
+  int size = sizeof(sockaddr_in);
+  SOCKET& client_sock = client.m_pimpl.as<SOCKET>();
+  client_sock = sys_accept(
+    sock, 
+    &client.m_address.m_pimpl.as<sockaddr>(),
+    &size);
+
+  if (client_sock == INVALID_SOCKET)
+  {
+    auto error = WSAGetLastError();
+    eve_assert(!(block && error == WSAEWOULDBLOCK));
+    if (error == WSAEWOULDBLOCK)
+      return false;
+    else
+      throw eve::system_error("An error occurred while accepting new clients.", WSAGetLastError());
+  }
+
+  client.m_type = m_type;
+  client.m_state = state::connected;
+  m_address.m_domain = m_address.m_domain;
+  m_blocking = false;
+  return true;
+}
+
+void eve::socket::make_blocking(bool blocking)
+{
+  if (m_blocking == blocking)
+    return;
+
+  m_blocking = blocking;
+  u_long nNoBlock = u_long(!blocking);
+  ioctlsocket(m_pimpl.as<SOCKET>(), FIONBIO, &nNoBlock);
+}
+
+#endif
+

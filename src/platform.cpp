@@ -26,6 +26,7 @@
 \******************************************************************************/
 
 #include "eve/platform.h"
+#include <atomic>
 
 eve::size eve::arithmetic_type_size(arithmetic_type type)
 {
@@ -38,4 +39,11 @@ eve::size eve::arithmetic_type_size(arithmetic_type type)
     eve_sizeof(float), eve_sizeof(double) 
   };
   return k_sizes[size(type)];
+}
+
+static std::atomic<eve::id> s_counter(0);
+
+eve::id eve::unique_id()
+{
+  return ++s_counter;
 }

@@ -42,21 +42,21 @@ namespace eve
 
 /** A POD type suitable for use as uninitialized storage for any object whose
   * size is at most Len and whose alignment requirement is a divisor of Align */
-template<eve::size t_size, eve::size t_align = 8U>
+template<eve::size Size, eve::size Align = 8U>
 class fixed_storage
 {
 public:
    /** @returns the size of fixed storage buffer. */
   eve::size size() const
   {
-    return t_size;
+    return Size;
   }
 
-  /** Checks that @p newsize is at most t_size and always returns false
+  /** Checks that @p newsize is at most Size and always returns false
     * (no change occurred). */
   bool reserve(eve::size newsize)
   {
-    eve_assert(newsize <= t_size);
+    eve_assert(newsize <= Size);
     return false;
   }
 
@@ -65,6 +65,7 @@ public:
   template<class T, typename... Args>
   T* construct(Args&&... args)
   {
+    static_assert(eve_sizeof(T) <= Size && eve_alignof(T) <= Align, "Storage size and align must be at least equal to those of type T.");
     return new (&m_data) T(std::forward<Args>(args)...);
   }
 
@@ -83,12 +84,12 @@ public:
   operator const void*() const {return &m_data; }
 
 private:
-  detail::aligned_storage<t_size, t_align> m_data;
+  detail::aligned_storage<Size, Align> m_data;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-template <eve::size t_size, eve::size t_align = 8U>
+template <eve::size Size, eve::size Align = 8U>
 class dyn_storage
 {
 public:
@@ -152,8 +153,8 @@ private:
   void*& dynptr() { return *(void**)&m_storage; }
   const void* dynptr() const { return *(const void* const*)&m_storage; }
 
-  static const eve::size k_size = eve_max2(t_size, eve_sizeof(void*));
-  static const eve::size k_align = eve_max2(t_align, eve_alignof(void*));
+  static const eve::size k_size = eve_max2(Size, eve_sizeof(void*));
+  static const eve::size k_align = eve_max2(Align, eve_alignof(void*));
 
   allocator::any m_allocator;
   eve::size m_size;
