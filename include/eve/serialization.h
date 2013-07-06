@@ -52,6 +52,23 @@
     }\
   };
 
+  #define __eve_field_named(f, n) eve::detail::field(n, & serialized_class :: f),
+  #define _eve_field_named(pair) __eve_field_named pair
+
+#define eve_serializable_named(Class, ...)\
+  struct serialization_info : public eve::detail::serialization_info_base\
+  {\
+    typedef Class serialized_class;\
+    serialization_info() : eve::detail::serialization_info_base(#Class)\
+    {\
+      static const eve::detail::field s_fields[] =\
+      {\
+        eve_pp_map(_eve_field_named, __VA_ARGS__)\
+      };\
+      m_fields = eve::range<const eve::detail::field*>(s_fields, s_fields + sizeof(s_fields) / sizeof(eve::detail::field));\
+    }\
+  };
+
 #define eve_decl_serializable\
   struct serialization_info : public eve::detail::serialization_info_base\
   {\
@@ -68,6 +85,15 @@
     };\
     m_fields = eve::range<const eve::detail::field*>(s_fields, s_fields + sizeof(s_fields) / sizeof(eve::detail::field));\
   }
+
+#define eve_decl_text_serializer(type)\
+  namespace eve {\
+  template<> class text_serializer<type>\
+  {\
+  public:\
+    static void serialize(const type& instance, std::ostream& output, const std::string& tab);\
+    static void deserialize(serialization::parser& parser, type& instance);\
+  };}
 
 namespace eve {
 

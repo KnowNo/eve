@@ -215,6 +215,19 @@ struct text_serializer_helper<bool, true>
   }
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class enum_text_serializer
+{
+public:
+  static void serialize(const T& instance, std::ostream& output, const std::string& tab);
+  static void deserialize(serialization::parser& parser, T& instance);
+private:
+
+};
+void serialize_enum(const std::string& name, unsigned value, const std::string* labels, const unsigned* values, unsigned num_labels, std::ostream& output);
+unsigned deserialize_enum(const std::string& name, const std::string* labels, const unsigned* values, unsigned num_labels, serialization::parser& parser);
+
 } // detail
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

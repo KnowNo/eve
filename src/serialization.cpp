@@ -120,6 +120,35 @@ eve::serialization_error::serialization_error(const std::string& file, eve::size
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void eve::detail::serialize_enum(const std::string& name, unsigned value, const std::string* labels, const unsigned* values, unsigned num_labels, std::ostream& output)
+{
+   for (unsigned i = 0; i < num_labels; ++i)
+  {
+    if (value == values[i])
+    {
+      output << labels[i];
+      return;
+    }
+  }
+  throw std::runtime_error("Cannot serialize '" + name + "', invalid value " + std::to_string(value) + " found.");
+}
+
+unsigned eve::detail::deserialize_enum(const std::string& name, const std::string* labels, const unsigned* values, unsigned num_labels, serialization::parser& parser)
+{
+  parser.check(parser.SYMBOL);
+  for (unsigned i = 0; i < num_labels; ++i)
+  {
+    if (parser.token() == labels[i])
+    {
+      parser.scan();
+      return values[i];
+    }
+  }
+  throw std::runtime_error("Cannot serialize '"+ name + "', " + parser.token() + " is not a valid value.");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 using namespace eve::serialization;
 
 parser::parser(std::istream* source, const std::string& file) 
