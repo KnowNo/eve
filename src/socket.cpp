@@ -34,7 +34,7 @@
 // Namespace used for wrapping system functions in order to avoid naming collision
 inline SOCKET sys_socket(int a, int b, int c) { return socket(a, b, c); }
 inline int sys_listen(SOCKET socket, int conns) { return listen(socket, conns); }
-inline int sys_accept(SOCKET socket, sockaddr* addr, int* len) { return accept(socket, addr, len); }
+inline SOCKET sys_accept(SOCKET socket, sockaddr* addr, int* len) { return accept(socket, addr, len); }
 inline int sys_connect(SOCKET s, sockaddr* name, int namelen) { return connect(s, name, namelen); }
 inline int sys_send(SOCKET s, const char* buf, int len, int flags) { return send(s, buf, len, flags); }
 inline int sys_recv(SOCKET s, char* buf, int len, int flags) { return recv(s, buf, len, flags); }
@@ -191,7 +191,7 @@ void eve::socket::send_all(const char* data, eve::size size)
   const char* ptr = data;
   const char* end = data + size;
   while (ptr < end)
-    ptr += send(data, end - ptr);
+    ptr += send(data, eve::size(end - ptr));
 }
 
 eve::size eve::socket::receive(char* buffer, eve::size size)
@@ -205,7 +205,7 @@ void eve::socket::receive_all(char* buffer, eve::size size)
   char* ptr = buffer;
   char* end = buffer + size;
   while (ptr < end)
-    ptr += receive(ptr, end - ptr);
+    ptr += receive(ptr, eve::size(end - ptr));
 }
 
 bool eve::socket::try_accept(socket& client)
@@ -279,7 +279,7 @@ bool eve::socket::do_accept(socket& client, bool block)
     &client.m_address.m_pimpl.as<sockaddr>(),
     &size);
 
-  if (check_result(client_sock, block, "An error occurred while accepting new clients."))
+  if (check_result(int(client_sock), block, "An error occurred while accepting new clients."))
     return false;
 
   client.m_type = m_type;

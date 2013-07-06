@@ -30,6 +30,13 @@
 
 using namespace eve;
 
+namespace eve {
+
+extern void initialize_memory_debugger(bool enabled);
+extern void terminate_memory_debugger();
+
+} // eve
+
 extern void initialize_window();
 extern void terminate_window();
 extern void initialize_net();
@@ -38,6 +45,7 @@ extern void terminate_net();
 application::application(eve::flagset<application::module> modules)
   : m_modules(modules)
 {
+  eve::initialize_memory_debugger(modules.isset(module::memory_debugger));
   if (modules.isset(module::graphics))
     initialize_window();
   if (modules.isset(module::networking))
@@ -46,8 +54,9 @@ application::application(eve::flagset<application::module> modules)
 
 application::~application()
 {
-  if (m_modules.isset(module::graphics))
-    terminate_window();
   if (m_modules.isset(module::networking))
     terminate_net();
+  if (m_modules.isset(module::graphics))
+    terminate_window();
+  eve::terminate_memory_debugger();
 }

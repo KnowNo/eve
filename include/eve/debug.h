@@ -57,6 +57,24 @@ void show_error(const char* message);
 /** Shows a fatal error message and aborts execution. */
 void abort(const char* message);
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* Define a macro that is empty body '{ }' when compiling in release mode. */
+#ifndef EVE_RELEASE
+#  define __eve_debug_empty_func ;
+#else
+#  define __eve_debug_empty_func {}
+#endif // EVE_RELEASE
+
+
+class memory_debugger
+{
+public:
+  static void track(const void* ptr, bool inplace) __eve_debug_empty_func
+  static void untrack(const void* ptr, bool inplace) __eve_debug_empty_func
+  static void transfer(const void* from, const void* to) __eve_debug_empty_func
+};
+
 } // eve
 
 /** }@ */

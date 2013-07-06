@@ -46,8 +46,9 @@ public:
   enum class module : eve::uint8
   {
     all = 0xFF,
-    graphics = eve_bit(1),
-    networking = eve_bit(2),
+    memory_debugger = eve_bit(1),
+    graphics = eve_bit(2),
+    networking = eve_bit(3),
   };
 
   application(eve::flagset<application::module> modules = module::all);

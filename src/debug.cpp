@@ -29,8 +29,13 @@
 #include <iostream>
 #include <cstdint>
 
+#ifndef EVE_RELEASE
+#  include <mutex>
+#  include <unordered_map>
+#endif
+
 #ifdef EVE_WINDOWS
-#include <Windows.h>
+#  include <Windows.h>
 #endif
 
 void eve::show_error(const char* message)
@@ -51,5 +56,79 @@ void eve::abort(const char* message)
   throw uncatchable_exception();
 #else
   ::abort();
-#endif
+#endif // EVE_RELEASE
 }
+
+// MEMORY DEBUGGER /////////////////////////////////////////////////////////////////////////////////
+
+#ifndef EVE_RELEASE
+
+struct allocation
+{
+  const char* function;
+  const char* file;
+  unsigned line;
+  const void* ptr;
+  size_t size;
+  bool is_array;
+  eve::size place;
+};
+
+static bool s_initialized = false;
+static bool s_enabled = false;
+static std::mutex s_mutex;
+static std::unordered_map<const void*, allocation> s_allocations;
+
+namespace eve {
+
+void initialize_memory_debugger(bool enabled)
+{
+  s_enabled = enabled;
+  s_initialized = true;
+}
+
+void terminate_memory_debugger()
+{
+  s_initialized = false;
+
+}
+
+} // eve
+
+static void check_initialization()
+{
+  if (!s_initialized)
+    throw std::runtime_error("Memory debugger not initialized. Have you sure you're using an eve::application?");
+}
+
+void eve::memory_debugger::track(const void* ptr, bool inplace)
+{
+  check_initialization();
+
+  std::lock_guard<std::mutex> lock(s_mutex);
+
+  if (!s_enabled)
+    return;
+
+  auto it = s_allocations.find(ptr);
+  if (it == s_allocations.end())
+    s_allocations.insert(it, std::make_pair(ptr, allocation(file, line, function, ptr, size, isArray, (Allocation::Place)inPlace)));
+  else
+  {
+    if (it->second.place != Allocation::DYNAMIC || !inPlace)
+      reportError(file, line, function, ptr, format("multiple allocation_t in line %;", line));
+    it->second.place = Allocation::BOTH;
+  }
+}
+
+void eve::memory_debugger::untrack(const void* ptr, bool inplace)
+{
+
+}
+
+void eve::memory_debugger::transfer(const void* from, const void* to)
+{
+
+}
+
+#endif // EVE_RELEASE
