@@ -27,53 +27,31 @@
 
 #pragma once
 
-#include "eve/allocator.h"
-#include "eve/debug.h"
+#include "any.h"
+#include "eve/platform.h"
 
-#ifdef EVE_WINDOWS
-#include <Windows.h>
-#else
-#include <stdalign.h>
-#endif
+/** \addtogroup Lib
+  * @{
+  */
 
-using namespace eve;
-using namespace eve::allocator;
+namespace eve { namespace allocator {
 
-void* heap::allocate(eve::size size, uint8 align)
+class debug
 {
-  eve_assert(size > 0 && align > 0);
-#ifdef EVE_WINDOWS
-  return _aligned_malloc(size, align);
-#else
-  return aligned_alloc(align, size);
-#endif
-}
+public:
+  debug(const char* name, allocator::any allocator);
+  ~debug();
 
-void heap::deallocate(const void* ptr)
-{
-#ifdef EVE_WINDOWS
-  _aligned_free(const_cast<void*>(ptr));
-#else
-  free(const_cast<void*>(ptr));
-#endif
-}
+  void* allocate(eve::size size, uint8 align);
+  void  deallocate(const void* ptr);
 
-////////////////////////////////////////////////////////////////////////////////
-#ifndef EVE_RELEASE
+private:
+  const char* m_name;
+  allocator::any m_allocator;
+  eve::uint64 m_usedmemory;
+};
 
-debug& eve::allocator::global()
-{
-  static heap heapalloc;
-  static eve::allocator::debug debugalloc("global", &heapalloc);
-  return debugalloc;
-}
+} // allocator
+} // eve
 
-#else
-
-heap& eve::allocator::global()
-{
-  static heap instance;
-  return instance;
-}
-
-#endif // EVE_RELEASE
+/** }@ */

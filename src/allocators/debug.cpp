@@ -25,55 +25,27 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#pragma once
+#include "eve/allocators/debug.h"
 
-#include "eve/allocator.h"
-#include "eve/debug.h"
-
-#ifdef EVE_WINDOWS
-#include <Windows.h>
-#else
-#include <stdalign.h>
-#endif
-
-using namespace eve;
 using namespace eve::allocator;
 
-void* heap::allocate(eve::size size, uint8 align)
+debug::debug(const char* name, any allocator)
+  : m_name(name)
+  , m_allocator(allocator)
+  , m_usedmemory(0)
 {
-  eve_assert(size > 0 && align > 0);
-#ifdef EVE_WINDOWS
-  return _aligned_malloc(size, align);
-#else
-  return aligned_alloc(align, size);
-#endif
+
 }
 
-void heap::deallocate(const void* ptr)
+debug::~debug()
 {
-#ifdef EVE_WINDOWS
-  _aligned_free(const_cast<void*>(ptr));
-#else
-  free(const_cast<void*>(ptr));
-#endif
 }
 
-////////////////////////////////////////////////////////////////////////////////
-#ifndef EVE_RELEASE
-
-debug& eve::allocator::global()
+void* debug::allocate(eve::size size, eve::uint8 align)
 {
-  static heap heapalloc;
-  static eve::allocator::debug debugalloc("global", &heapalloc);
-  return debugalloc;
+  return nullptr;
 }
 
-#else
-
-heap& eve::allocator::global()
+void debug::deallocate(const void* ptr)
 {
-  static heap instance;
-  return instance;
 }
-
-#endif // EVE_RELEASE

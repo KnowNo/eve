@@ -26,6 +26,7 @@
 \******************************************************************************/
 
 #include "eve/window.h"
+#include "eve/allocator.h"
 #include "eve/utils.h"
 
 #ifdef EVE_WINDOWS

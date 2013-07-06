@@ -27,53 +27,22 @@
 
 #pragma once
 
-#include "eve/allocator.h"
-#include "eve/debug.h"
+#include "eve/platform.h"
 
-#ifdef EVE_WINDOWS
-#include <Windows.h>
-#else
-#include <stdalign.h>
-#endif
+/** \addtogroup Lib
+  * @{
+  */
 
-using namespace eve;
-using namespace eve::allocator;
+namespace eve {
 
-void* heap::allocate(eve::size size, uint8 align)
-{
-  eve_assert(size > 0 && align > 0);
-#ifdef EVE_WINDOWS
-  return _aligned_malloc(size, align);
-#else
-  return aligned_alloc(align, size);
-#endif
-}
+/** If it is possible to fit size bytes of storage aligned by alignment into the
+ ** buffer pointed to by @p ptr with length @p space, the function sets @p space
+ ** to the total size of object plus bytes used for alignment.
+ ** @returns the first possible address of such aligned storage. If it is
+ ** impossible (i.e. the buffer is too small), align does nothing and returns
+ ** nullptr. */
+void* align(eve::size align, eve::size size, void* ptr, eve::size& space);
 
-void heap::deallocate(const void* ptr)
-{
-#ifdef EVE_WINDOWS
-  _aligned_free(const_cast<void*>(ptr));
-#else
-  free(const_cast<void*>(ptr));
-#endif
-}
+} // eve
 
-////////////////////////////////////////////////////////////////////////////////
-#ifndef EVE_RELEASE
-
-debug& eve::allocator::global()
-{
-  static heap heapalloc;
-  static eve::allocator::debug debugalloc("global", &heapalloc);
-  return debugalloc;
-}
-
-#else
-
-heap& eve::allocator::global()
-{
-  static heap instance;
-  return instance;
-}
-
-#endif // EVE_RELEASE
+/** }@ */

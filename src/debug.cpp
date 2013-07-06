@@ -33,19 +33,22 @@
 #include <Windows.h>
 #endif
 
-void eve::abort(const char* message)
+void eve::show_error(const char* message)
 {
-  std::cout.flush();
-  std::cout << "FATAL ERROR: " << message << '\n';
-  std::cout.flush();
-
 #ifdef EVE_WINDOWS
   MessageBox(NULL, message, "Error", MB_ICONERROR | MB_OK);
+#else
+  std::cerr << "Error: " << message;
 #endif
+}
+
+void eve::abort(const char* message)
+{
+  eve::show_error(message);
 
 #ifndef EVE_RELEASE
-  struct dummy {};
-  throw dummy();
+  struct uncatchable_exception {};
+  throw uncatchable_exception();
 #else
   ::abort();
 #endif

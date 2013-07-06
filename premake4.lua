@@ -31,7 +31,7 @@ solution "eve"
 
   configuration "windows"
     defines { "EVE_WINDOWS" }
-    links { "winmm", "shlwapi", "opengl32"}
+    links { "winmm", "shlwapi", "opengl32", "ws2_32"}
   
   configuration {"windows", "x32"}
     libdirs {"extern/lib/win32", "lib/win32"}

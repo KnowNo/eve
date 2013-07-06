@@ -27,6 +27,10 @@
 
 #pragma once
 
+#include "allocators/align.h"
+#ifndef EVE_FINAL
+#include "allocators/debug.h"
+#endif
 #include "platform.h"
 #include "uncopyable.h"
 #include <memory>
@@ -35,83 +39,10 @@
   * @{
   */
 
-namespace eve {
+namespace eve { namespace allocator {
 
-/** If it is possible to fit size bytes of storage aligned by alignment into the
- ** buffer pointed to by @p ptr with length @p space, the function sets @p space
- ** to the total size of object plus bytes used for alignment.
- ** @returns the first possible address of such aligned storage. If it is
- ** impossible (i.e. the buffer is too small), align does nothing and returns
- ** nullptr. */
-inline  void* align(eve::size align, eve::size size, void* ptr, eve::size& space)
-{
-  eve::size offset = (eve::size)((eve::uintptr)ptr & (align - 1));
-  
-  if (offset > 0)
-    offset = align - offset;
-
-  if (!ptr || space < offset || space - offset < size)
-    return nullptr;
-  else
-  {
-    ptr = (char*)ptr + offset;
-    space = offset + size;
-    return ptr;
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace allocator
-{
-
-class  any
-{
-public:
-  template <class tallocator>
-  any(tallocator* allocator)
-    : m_allocator(allocator)
-  {
-    static const calltable s_table = { any::allocate<tallocator>, any::deallocate<tallocator> };
-    m_table = &s_table;
-  }
-
-  void* allocate(eve::size size, uint8 align)
-  {
-    return m_table->allocate(m_allocator, size, align);
-  }
-
-  void  deallocate(const void* ptr)
-  {
-    m_table->deallocate(m_allocator, ptr);
-  }
-  
-private:
-  struct calltable
-  {
-    void* (*allocate)(void*, eve::size, uint8);
-    void (*deallocate)(void*, const void*);
-  };
-
-  template<class T>
-  static void* allocate(void* alloc, eve::size size, uint8 align)
-  {
-    return static_cast<T*>(alloc)->allocate(size, align);
-  }
-
-  template<class T>
-  static void deallocate(void* alloc, const void* ptr)
-  {
-    static_cast<T*>(alloc)->deallocate(ptr);
-  }
-
-  void* m_allocator;
-  const calltable* m_table;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-class  heap
+/** This allocator wraps the generic process heap malloc/free functions. */
+class heap
 {
 public:
   void* allocate(eve::size size, uint8 align);
@@ -120,20 +51,32 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
- heap& global();
+#ifndef EVE_FINAL
+
+debug& global();
+
+#else
+
+heap& global();
+
+#endif
+
+}// allocator
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/** Allocates memory using specified allocator on construction and deallocates it on destruction.
+    This class behaves as a unique resource handler (e.g. std::unique_ptr) */
 template <class Allocator>
-class scoped_alloc : uncopyable
+class unique_alloc : uncopyable
 {
 public:
-  scoped_alloc(Allocator& alloc, eve::size size, eve::size align)
+  unique_alloc(Allocator& alloc, eve::size size, eve::size align)
     : m_allocator(alloc)
   {
     m_ptr = alloc.allocate(size, align);
   }
-  ~scoped_alloc()
+  ~unique_alloc()
   {
     if (m_ptr)
       m_allocator.deallocate(m_ptr);
@@ -150,12 +93,12 @@ private:
   void* m_ptr;
 };
 
-}// allocator
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class T, class Allocator, typename... Args>
 T* create(Allocator& allocator, Args&&... args)
 {
-  allocator::scoped_alloc<Allocator> alloc(allocator, eve_sizeof(T), eve_alignof(T));
+  eve::unique_alloc<Allocator> alloc(allocator, eve_sizeof(T), eve_alignof(T));
   new (alloc) T(std::forward<Args>(args)...);
   return static_cast<T*>(alloc.release());
 }
@@ -182,10 +125,13 @@ struct global_deleter
   }
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// TODO move this to some other header file
 template<class T>
 struct unique_ptr
 {
-  // This is because damn Visual Studio does not support template aliases.
+  // This is because damn Visual Studio does not support C++11 aliases.
   typedef std::unique_ptr<T, global_deleter<T>> type;
 };
 

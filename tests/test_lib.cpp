@@ -28,6 +28,7 @@
 #include <gtest/gtest.h>
 #include <eve/debug.h>
 #include <eve/storage.h>
+#include <eve/allocator.h>
 #include <eve/path.h>
 #include <fstream>
 

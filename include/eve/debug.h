@@ -51,8 +51,11 @@
 namespace eve
 {
 
+/** Shows a fatal error message. */
+void show_error(const char* message);
+
 /** Shows a fatal error message and aborts execution. */
- void abort(const char* message);
+void abort(const char* message);
 
 } // eve
 

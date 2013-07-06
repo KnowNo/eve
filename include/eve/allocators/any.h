@@ -27,53 +27,56 @@
 
 #pragma once
 
-#include "eve/allocator.h"
-#include "eve/debug.h"
+#include "eve/platform.h"
 
-#ifdef EVE_WINDOWS
-#include <Windows.h>
-#else
-#include <stdalign.h>
-#endif
+namespace eve { namespace allocator {
 
-using namespace eve;
-using namespace eve::allocator;
-
-void* heap::allocate(eve::size size, uint8 align)
+/** This class is used to interface any allocator by type-erasure. 
+    @note it does not own the allocator therefore it is not deleted by this class
+          on destruction. */
+class any
 {
-  eve_assert(size > 0 && align > 0);
-#ifdef EVE_WINDOWS
-  return _aligned_malloc(size, align);
-#else
-  return aligned_alloc(align, size);
-#endif
-}
+public:
+  template <class tallocator>
+  any(tallocator* allocator)
+    : m_allocator(allocator)
+  {
+    static const calltable s_table = { any::allocate<tallocator>, any::deallocate<tallocator> };
+    m_table = &s_table;
+  }
 
-void heap::deallocate(const void* ptr)
-{
-#ifdef EVE_WINDOWS
-  _aligned_free(const_cast<void*>(ptr));
-#else
-  free(const_cast<void*>(ptr));
-#endif
-}
+  void* allocate(eve::size size, uint8 align)
+  {
+    return m_table->allocate(m_allocator, size, align);
+  }
 
-////////////////////////////////////////////////////////////////////////////////
-#ifndef EVE_RELEASE
+  void  deallocate(const void* ptr)
+  {
+    m_table->deallocate(m_allocator, ptr);
+  }
+  
+private:
+  struct calltable
+  {
+    void* (*allocate)(void*, eve::size, uint8);
+    void (*deallocate)(void*, const void*);
+  };
 
-debug& eve::allocator::global()
-{
-  static heap heapalloc;
-  static eve::allocator::debug debugalloc("global", &heapalloc);
-  return debugalloc;
-}
+  template<class T>
+  static void* allocate(void* alloc, eve::size size, uint8 align)
+  {
+    return static_cast<T*>(alloc)->allocate(size, align);
+  }
 
-#else
+  template<class T>
+  static void deallocate(void* alloc, const void* ptr)
+  {
+    static_cast<T*>(alloc)->deallocate(ptr);
+  }
 
-heap& eve::allocator::global()
-{
-  static heap instance;
-  return instance;
-}
+  void* m_allocator;
+  const calltable* m_table;
+};
 
-#endif // EVE_RELEASE
+} // allocator
+} // eve
