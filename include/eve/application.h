@@ -51,7 +51,7 @@ public:
     networking = eve_bit(3),
   };
 
-  application(eve::flagset<application::module> modules = module::all);
+  application(eve::flagset<application::module> modules);
   ~application();
 
 private:

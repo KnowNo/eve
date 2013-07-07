@@ -26,11 +26,14 @@
 \******************************************************************************/
 
 #include <gtest/gtest.h>
+#include <eve/application.h>
 #include <eve/serialization/vector.h>
 #include <eve/serialization.h>
 
 TEST(Lib, serialization)
 {
+  eve::application app(eve::application::module::memory_debugger);
+
   struct Boo
   {
     int j;

@@ -29,10 +29,18 @@
 
 #include "macro.h"
 #include "platform.h"
+#include <stdexcept>
+
+#define eve_source_location_args const char* function, const char* file, unsigned line
+#define eve_here __FUNCTION__, __FILE__, __LINE__
+#define eve_forward_source_location_args function, file, line
 
 #ifndef EVE_RELEASE
 
-#define eve_assert(condition) if (!(condition)) eve::abort("Assertion fail (" #condition ") in " eve_file_line ".")
+/** A string containing file and line. */
+#define eve_str_source_location "function " eve_function_name " in file " __FILE__ " at line " eve_pp_stringify(__LINE__)
+
+#define eve_assert(condition) if (!(condition)) eve::abort("Assertion fail (" #condition ") in " eve_str_source_location ".")
 #define eve_debug_code(...) __VA_ARGS__
 
 #else
@@ -66,13 +74,21 @@ void abort(const char* message);
 #  define __eve_debug_empty_func {}
 #endif // EVE_RELEASE
 
+class memory_error : public std::logic_error
+{
+public:
+  memory_error(const void* ptr, const std::string& error) throw();
+  const void* ptr() const { return m_ptr; }
+private:
+  const void* m_ptr;
+};
 
 class memory_debugger
 {
 public:
-  static void track(const void* ptr, bool inplace) __eve_debug_empty_func
-  static void untrack(const void* ptr, bool inplace) __eve_debug_empty_func
-  static void transfer(const void* from, const void* to) __eve_debug_empty_func
+  static void track(eve_source_location_args, const void* ptr, bool inplace) __eve_debug_empty_func
+  static void untrack(eve_source_location_args, const void* ptr, bool inplace) __eve_debug_empty_func
+  static void transfer(eve_source_location_args, const void* from, const void* to) __eve_debug_empty_func
 };
 
 } // eve

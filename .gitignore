@@ -2,6 +2,7 @@
 /lib
 /extern
 /doc
+eve_memory_debugger_report.txt
 *.exe
 *.elf
 *.idb

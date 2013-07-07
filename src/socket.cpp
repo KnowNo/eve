@@ -71,6 +71,11 @@ eve::socket::address::address(const std::string& hostname, int port, domain doma
   set(hostname, port, domain);
 }
 
+eve::socket::address::~address()
+{
+  eve::destroy<SOCKADDR_IN>(eve_here, &m_pimpl.as<SOCKADDR_IN>());
+}
+
 void eve::socket::address::set(int port, domain domain)
 {
   initialize(domain);
@@ -97,7 +102,7 @@ void eve::socket::address::set(const std::string& hostname, int port, domain dom
 void eve::socket::address::initialize(domain domain)
 {
   m_domain = domain;
-  m_pimpl.construct<SOCKADDR_IN>();
+  m_pimpl.construct<SOCKADDR_IN>(eve_here);
   auto& addr = m_pimpl.as<SOCKADDR_IN>(); 
   memset(&addr, 0, sizeof(SOCKADDR_IN));
   addr.sin_family = m_domain == domain::IPv4 ? AF_INET : AF_INET6;

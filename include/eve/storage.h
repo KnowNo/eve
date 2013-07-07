@@ -27,10 +27,11 @@
 
 #pragma once
 
+#include "detail/storage.h"
+#include "memory.h"
 #include "debug.h"
 #include "platform.h"
 #include "allocators/any.h"
-#include "detail/storage.h"
 #include "uncopyable.h"
 
 /** \addtogroup Lib
@@ -63,10 +64,12 @@ public:
   /** Statically asserts size and alignment of T match with this storage and
     * constructs T in this storage (calls its contructor) passing @p args to it. */
   template<class T, typename... Args>
-  T* construct(Args&&... args)
+  T* construct(eve_source_location_args, Args&&... args)
   {
     static_assert(eve_sizeof(T) <= Size && eve_alignof(T) <= Align, "Storage size and align must be at least equal to those of type T.");
-    return new (&m_data) T(std::forward<Args>(args)...);
+    auto ptr = new (&m_data) T(std::forward<Args>(args)...);
+    eve::memory_debugger::track(eve_forward_source_location_args, ptr, true);
+    return ptr;
   }
 
   /** \returns a non-const reference to the storage data reinterpreted as T. */
@@ -99,7 +102,7 @@ public:
   ~dyn_storage()
   {
     if (exceeds())
-      m_allocator.deallocate(dynptr());
+      m_allocator.deallocate(eve_here, dynptr());
   }
 
   /** @returns the size of current storage buffer. */
@@ -126,10 +129,10 @@ public:
     newsize = (newsize / size() + 1) * k_size;
 
     if (exceeds())
-      m_allocator.deallocate(dynptr());
+      m_allocator.deallocate(eve_here, dynptr());
 
     m_size = newsize | eve::size_msb;
-    dynptr() = m_allocator.allocate(newsize, k_align);
+    dynptr() = m_allocator.allocate(eve_here, newsize, k_align);
     return true;
   }
 
@@ -167,7 +170,7 @@ namespace storage {
 
 /** TODO add doc */
 template <class T, class Storage, typename... Args>
-inline T* create(Storage& storage, Args&&... args)
+T* create(eve_source_location_args, Storage& storage, Args&&... args)
 {
   void* ptr;
   eve::size space = eve_sizeof(T);
@@ -176,7 +179,7 @@ inline T* create(Storage& storage, Args&&... args)
     ptr = (void*)storage;
     ptr = eve::align(eve_alignof(T), eve_sizeof(T), ptr, space);
   } while (storage.reserve(space));
-  return new (ptr) T(std::forward<Args>(args)...);
+  return eve::create<T>(eve_forward_source_location_args, ptr, std::forward<Args>(args)...);
 }
 
 template <class T>

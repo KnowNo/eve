@@ -28,12 +28,9 @@
 #pragma once
 
 #include "allocators/align.h"
-#ifndef EVE_FINAL
-#include "allocators/debug.h"
-#endif
+#include "debug.h"
 #include "platform.h"
 #include "uncopyable.h"
-#include <memory>
 
 /** \addtogroup Lib
   * @{
@@ -42,105 +39,18 @@
 namespace eve { namespace allocator {
 
 /** This allocator wraps the generic process heap malloc/free functions. */
-class heap
+class heap : uncopyable
 {
 public:
-  void* allocate(eve::size size, uint8 align);
-  void  deallocate(const void* ptr);
+  void* allocate(eve_source_location_args, eve::size size, uint8 align);
+  void  deallocate(eve_source_location_args, const void* ptr);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef EVE_FINAL
-
-debug& global();
-
-#else
-
 heap& global();
 
-#endif
-
-}// allocator
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/** Allocates memory using specified allocator on construction and deallocates it on destruction.
-    This class behaves as a unique resource handler (e.g. std::unique_ptr) */
-template <class Allocator>
-class unique_alloc : uncopyable
-{
-public:
-  unique_alloc(Allocator& alloc, eve::size size, eve::size align)
-    : m_allocator(alloc)
-  {
-    m_ptr = alloc.allocate(size, align);
-  }
-  ~unique_alloc()
-  {
-    if (m_ptr)
-      m_allocator.deallocate(m_ptr);
-  }
-  void* release()
-  {
-    auto temp = m_ptr;
-    m_ptr = nullptr;
-    return temp;
-  }
-  operator void*() { return m_ptr;}
-private:
-  Allocator& m_allocator;
-  void* m_ptr;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-template <class T, class Allocator, typename... Args>
-T* create(Allocator& allocator, Args&&... args)
-{
-  eve::unique_alloc<Allocator> alloc(allocator, eve_sizeof(T), eve_alignof(T));
-  new (alloc) T(std::forward<Args>(args)...);
-  return static_cast<T*>(alloc.release());
-}
-
-template <class T>
-void destroy(const T* object)
-{
-  object->~T();
-}
-
-template <class T, class Allocator>
-void destroy(Allocator& allocator, const T* object)
-{
-  object->~T();
-  allocator::global().deallocate(object);
-}
-
-template <class T>
-struct global_deleter
-{
-  void operator()(T* ptr) const
-  {
-    destroy(allocator::global(), ptr);
-  }
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// TODO move this to some other header file
-template<class T>
-struct unique_ptr
-{
-  // This is because damn Visual Studio does not support C++11 aliases.
-  typedef std::unique_ptr<T, global_deleter<T>> type;
-};
-
-template<class T, typename... Args>
-typename unique_ptr<T>::type make_unique(Args&&... args)
-{
-  return typename unique_ptr<T>::type(new T(std::forward<Args>(args)...));
-}
-
+} // allocator
 } // eve
 
 /** }@ */

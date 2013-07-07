@@ -64,12 +64,12 @@ window::window(const std::string& title)
   , m_height(0)
   , m_title(title)
 {
-  m_pimpl.construct<window_impl>();
+  m_pimpl.construct<window_impl>(eve_here);
 }
 
 window::~window()
 {
-  eve::destroy(&m_pimpl.as<window_impl>());
+  eve::destroy(eve_here, &m_pimpl.as<window_impl>());
 }
 
 void window::configure(const config& config)

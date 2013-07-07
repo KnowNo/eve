@@ -29,6 +29,7 @@
 #include <eve/debug.h>
 #include <eve/storage.h>
 #include <eve/allocator.h>
+#include <eve/application.h>
 #include <eve/path.h>
 #include <fstream>
 
@@ -39,6 +40,8 @@ TEST(Lib, debug)
 
 TEST(Lib, storage)
 {
+  eve::application app(eve::application::module::memory_debugger);
+
   eve::fixed_storage<7, 1> data1;
   
   (void)data1;
@@ -61,9 +64,9 @@ TEST(Lib, storage)
     ~Foo() { }
   };
 
-  auto foo = eve::storage::create<Foo>(data16, 42);
+  auto foo = eve::storage::create<Foo>(eve_here, data16, 42);
   EXPECT_EQ(42, foo->value);
-  eve::destroy(foo);
+  eve::destroy(eve_here, foo);
 
   eve::dyn_storage<1, eve_alignof(Foo)> dynstorage;
 
@@ -75,25 +78,29 @@ TEST(Lib, storage)
     ~Bar() { }
   };
 
-  auto bar = eve::storage::create<Bar>(dynstorage, 42);
+  auto bar = eve::storage::create<Bar>(eve_here, dynstorage, 42);
   EXPECT_EQ(42, bar->value);
   EXPECT_TRUE(dynstorage.exceeds());
-  eve::destroy(bar);
+  eve::destroy(eve_here, bar);
 }
 
 TEST(Lib, allocator)
 {
+  eve::application app(eve::application::module::memory_debugger);
+
   eve::allocator::heap h;
   eve::allocator::any a(&h);
 }
 
 TEST(Lib, path)
 {
+  eve::application app(eve::application::module::memory_debugger);
+
   std::string path = "C:/Foo/file.txt";
 
   eve::path::pop(path);
   eve::path::push(path, "\\file2.txt");
-
+  
   auto filename = eve::path::pop(path);
   EXPECT_EQ("file2.txt", filename);
   EXPECT_EQ("C:/Foo", path);

@@ -82,6 +82,7 @@ public:
     address(domain domain);
     address(int port, domain domain = domain::IPv4);
     address(const std::string& hostname, int port, domain domain = domain::IPv4);
+    ~address();
 
     /** Sets this address to any address and port @p port. */
     void set(int port, domain domain = domain::IPv4);

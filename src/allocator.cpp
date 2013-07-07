@@ -28,7 +28,6 @@
 #pragma once
 
 #include "eve/allocator.h"
-#include "eve/debug.h"
 
 #ifdef EVE_WINDOWS
 #include <Windows.h>
@@ -39,18 +38,21 @@
 using namespace eve;
 using namespace eve::allocator;
 
-void* heap::allocate(eve::size size, uint8 align)
+void* heap::allocate(eve_source_location_args, eve::size size, uint8 align)
 {
   eve_assert(size > 0 && align > 0);
 #ifdef EVE_WINDOWS
-  return _aligned_malloc(size, align);
+  auto ptr = _aligned_malloc(size, align);
 #else
-  return aligned_alloc(align, size);
+  auto ptr = aligned_alloc(align, size);
 #endif
+  eve::memory_debugger::track(eve_forward_source_location_args, ptr, false);
+  return ptr;
 }
 
-void heap::deallocate(const void* ptr)
+void heap::deallocate(eve_source_location_args, const void* ptr)
 {
+  eve::memory_debugger::untrack(eve_forward_source_location_args, ptr, false);
 #ifdef EVE_WINDOWS
   _aligned_free(const_cast<void*>(ptr));
 #else
@@ -59,21 +61,9 @@ void heap::deallocate(const void* ptr)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef EVE_RELEASE
-
-debug& eve::allocator::global()
-{
-  static heap heapalloc;
-  static eve::allocator::debug debugalloc("global", &heapalloc);
-  return debugalloc;
-}
-
-#else
 
 heap& eve::allocator::global()
 {
   static heap instance;
   return instance;
 }
-
-#endif // EVE_RELEASE

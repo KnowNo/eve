@@ -31,22 +31,29 @@
   * @{
   */
 
-  #define __eve_stringify(arg) #arg
+#ifdef _MSC_VER
+  #define eve_function_name __FUNCTION__
+  #define eve_stdcall __stdcall
+  #define eve_thread_local _declspec(thread)
+#else
+  #define eve_function_name __PRETTY_FUNCTION__
+  #define eve_stdcall
+  #define eve_thread_local __thread
+#endif
 
+  #define __eve_pp_stringify(arg) #arg
 /** Turns arg into "arg". */
-#define eve_stringify(arg) __eve_stringify(arg)
+#define eve_pp_stringify(arg) __eve_pp_stringify(arg)
 
   #define _eve_pp_paste(a, b) a ## b
 #define eve_pp_paste(a, b) _eve_pp_paste(a, b)
 #define eve_pp_superpaste(a, b) eve_pp_paste(a, b)
 
-/** A string containing file and line. */
-#define eve_file_line "file " __FILE__ " at line " eve_stringify(__LINE__)
-
 #define eve_max2(a, b) ((a) > (b) ? (a) : (b))
 
 #define eve_pp_echo(...) __VA_ARGS__
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
   #define _eve_pp_sequence \
            63,62,61,60,                   \
@@ -69,6 +76,7 @@
 /** This macro gives the number of arguments of a variadic macro. */
 #define eve_pp_nargs(...) _eve_pp_nargs((__VA_ARGS__, _eve_pp_sequence))
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
   #define _eve_pp_map_1(MACRO, arg) MACRO(arg)
   #define _eve_pp_map_2(MACRO, arg1, arg2) _eve_pp_map_1(MACRO, arg1) MACRO(arg2)

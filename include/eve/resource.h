@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "allocator.h"
+#include "memory.h"
 #include "serialization.h"
 #include <vector>
 #include <fstream>

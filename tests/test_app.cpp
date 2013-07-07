@@ -64,6 +64,8 @@ public:
 
 TEST(Application, application)
 {
+  eve::application app(eve::application::module::memory_debugger);
+
   eve::resource::ptr<dummy_host> host;
   host.load("data/dummy_host.txt");
   
@@ -77,7 +79,7 @@ TEST(Application, application)
 
 TEST(Application, window)
 {
-  eve::application app;
+  eve::application app(eve::application::module::graphics | eve::application::module::memory_debugger);
 
   eve::window::config c;
   c.width = 800;

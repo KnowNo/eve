@@ -28,6 +28,7 @@
 #pragma once
 
 #include "eve/platform.h"
+#include "eve/memory.h"
 
 namespace eve { namespace allocator {
 
@@ -45,33 +46,33 @@ public:
     m_table = &s_table;
   }
 
-  void* allocate(eve::size size, uint8 align)
+  void* allocate(eve_source_location_args, eve::size size, uint8 align)
   {
-    return m_table->allocate(m_allocator, size, align);
+    return m_table->allocate(eve_forward_source_location_args, m_allocator, size, align);
   }
 
-  void  deallocate(const void* ptr)
+  void  deallocate(eve_source_location_args, const void* ptr)
   {
-    m_table->deallocate(m_allocator, ptr);
+    m_table->deallocate(eve_forward_source_location_args, m_allocator, ptr);
   }
   
 private:
   struct calltable
   {
-    void* (*allocate)(void*, eve::size, uint8);
-    void (*deallocate)(void*, const void*);
+    void* (*allocate)(eve_source_location_args, void*, eve::size, uint8);
+    void (*deallocate)(eve_source_location_args, void*, const void*);
   };
 
   template<class T>
-  static void* allocate(void* alloc, eve::size size, uint8 align)
+  static void* allocate(eve_source_location_args, void* alloc, eve::size size, uint8 align)
   {
-    return static_cast<T*>(alloc)->allocate(size, align);
+    return static_cast<T*>(alloc)->allocate(eve_forward_source_location_args, size, align);
   }
 
   template<class T>
-  static void deallocate(void* alloc, const void* ptr)
+  static void deallocate(eve_source_location_args, void* alloc, const void* ptr)
   {
-    static_cast<T*>(alloc)->deallocate(ptr);
+    static_cast<T*>(alloc)->deallocate(eve_forward_source_location_args, ptr);
   }
 
   void* m_allocator;
