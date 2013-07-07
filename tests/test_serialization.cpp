@@ -30,26 +30,26 @@
 #include <eve/serialization/vector.h>
 #include <eve/serialization.h>
 
+struct Boo
+{
+  int j;
+  Boo() { }
+  Boo(int j) : j(j) {}
+  eve_serializable(Boo, j)
+};
+
+struct Foo
+{
+  int i;
+  float f;
+  double d;
+  std::vector<Boo> boos;
+  eve_serializable(Foo, i, f, d, boos)
+};
+
 TEST(Lib, serialization)
 {
   eve::application app(eve::application::module::memory_debugger);
-
-  struct Boo
-  {
-    int j;
-    Boo() { }
-    Boo(int j) : j(j) {}
-    eve_serializable(Boo, j);
-  };
-
-  struct Foo
-  {
-    int i;
-    float f;
-    double d;
-    std::vector<Boo> boos;
-    eve_serializable(Foo, i, f, d, boos);
-  };
 
   Foo foo;
   foo.i = 42;

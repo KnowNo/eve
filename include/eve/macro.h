@@ -101,5 +101,24 @@
 # define eve_pp_map(MACRO, ...) eve_pp_superpaste(_eve_pp_map_, eve_pp_nargs(__VA_ARGS__)) (MACRO, __VA_ARGS__)
 #endif
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  #define _eve_pp_map_arg_1(MACRO, arg, arg1) MACRO(arg, arg1)
+  #define _eve_pp_map_arg_2(MACRO, arg, arg1, arg2) _eve_pp_map_arg_1(MACRO, arg, arg1) MACRO(arg, arg2)
+  #define _eve_pp_map_arg_3(MACRO, arg, arg1, arg2, arg3) _eve_pp_map_arg_2(MACRO, arg, arg1, arg2) MACRO(arg, arg3)
+  #define _eve_pp_map_arg_4(MACRO, arg, arg1, arg2, arg3, arg4) _eve_pp_map_arg_3(MACRO, arg, arg1, arg2, arg3) MACRO(arg, arg4)
+  #define _eve_pp_map_arg_5(MACRO, arg, arg1, arg2, arg3, arg4, arg5) _eve_pp_map_arg_4(MACRO, arg, arg1, arg2, arg3, arg4) MACRO(arg, arg5)
+  #define _eve_pp_map_arg_6(MACRO, arg, arg1, arg2, arg3, arg4, arg5, arg6) _eve_pp_map_arg_5(MACRO, arg, arg1, arg2, arg3, arg4, arg5) MACRO(arg, arg6)
+  #define _eve_pp_map_arg_7(MACRO, arg, arg1, arg2, arg3, arg4, arg5, arg6, arg7) _eve_pp_map_arg_6(MACRO, arg, arg1, arg2, arg3, arg4, arg5, arg6) MACRO(arg, arg7)
+  #define _eve_pp_map_arg_8(MACRO, arg, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) _eve_pp_map_arg_7(MACRO, arg, arg1, arg2, arg3, arg4, arg5, arg6, arg7) MACRO(arg, arg8)
+  #define _eve_pp_map_arg_9(MACRO, arg, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) _eve_pp_map_arg_8(MACRO, arg, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) MACRO(arg, arg9)
+  #define _eve_pp_map_arg_10(MACRO, arg, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) _eve_pp_map_arg_9(MACRO, arg, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) MACRO(arg, arg10)
+
+/** Applies each argument to MACRO. Es: XI_PP_MAP(F, a, b, c) expands to F(a) F(b) F(c) */
+#ifdef _MSC_VER
+#  define eve_pp_map_arg(MACRO, arg, ...) _eve_pp_call(eve_pp_superpaste(_eve_pp_map_arg_, eve_pp_nargs(__VA_ARGS__)), (MACRO, arg, __VA_ARGS__))
+#else
+#  define eve_pp_map_arg(MACRO, arg, ...) eve_pp_superpaste(_eve_pp_map_arg_, eve_pp_nargs(__VA_ARGS__)) (MACRO, arg, __VA_ARGS__)
+#endif
 
 /** }@ */

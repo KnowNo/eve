@@ -43,7 +43,7 @@ public:
   static void deserialize(serialization::parser& parser, std::string& instance);
 };
 
-template <class T>
+template <typename T>
 void text_linear_container_serializer<T>::serialize(const T& instance, std::ostream& output, const std::string& tab)
 {
   const bool inlined = std::is_arithmetic<T>::value;
@@ -63,7 +63,7 @@ void text_linear_container_serializer<T>::serialize(const T& instance, std::ostr
   output << "]";
 }
 
-template <class T>
+template <typename T>
 void text_linear_container_serializer<T>::deserialize(serialization::parser& parser, T& instance)
 {
   static_assert(std::has_default_constructor<typename T::value_type>::value, "eve error: container value type must have a default constructor in order to be deserializable.");
@@ -87,7 +87,7 @@ namespace detail {
 class field
 {
 public:
-  template<class T, class Q>
+  template<typename T, class Q>
   field(const std::string name, Q T::*member)
     : m_name(name)
   {
@@ -161,7 +161,7 @@ void serialize_class_as_text(const serialization_info_base& info, const void* in
 void deserialize_class_as_text(const serialization_info_base& info, serialization::parser& parser,
                                              void* instance);
 
-template <class T, bool t_is_arithmetic>
+template <typename T, bool IsArithmetic, bool IsEnum>
 struct text_serializer_helper
 {
   static_assert(has_serialization_info<T>::value, "eve error: T is not serializable.");
@@ -179,8 +179,8 @@ struct text_serializer_helper
 };
 
 // Arithmetic type serialization
-template <class T>
-struct text_serializer_helper<T, true>
+template <typename T>
+struct text_serializer_helper<T, true, false>
 {
   static void serialize(const T& instance, std::ostream& output, const std::string& tab)
   {
@@ -196,7 +196,7 @@ struct text_serializer_helper<T, true>
 };
 
 template <>
-struct text_serializer_helper<bool, true>
+struct text_serializer_helper<bool, true, false>
 {
   static void serialize(const bool& instance, std::ostream& output, const std::string& tab)
   {
@@ -215,33 +215,48 @@ struct text_serializer_helper<bool, true>
   }
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+// ENUM SERIALIZATION //////////////////////////////////////////////////////////////////////////////
 
-class enum_text_serializer
+struct enum_value
 {
-public:
-  static void serialize(const T& instance, std::ostream& output, const std::string& tab);
-  static void deserialize(serialization::parser& parser, T& instance);
-private:
-
+  unsigned id;
+  const char* str;
 };
-void serialize_enum(const std::string& name, unsigned value, const std::string* labels, const unsigned* values, unsigned num_labels, std::ostream& output);
-unsigned deserialize_enum(const std::string& name, const std::string* labels, const unsigned* values, unsigned num_labels, serialization::parser& parser);
+
+template <typename T>
+struct enum_info;
+
+void serialize_enum_as_text(const char*  name, eve::uint32 instance, const enum_value* values, std::ostream& output);
+unsigned deserialize_enum_as_text(const char* name, const enum_value* values, serialization::parser& parser);
+
+template <typename T>
+struct text_serializer_helper<T, false, true>
+{
+  static void serialize(const T& instance, std::ostream& output, const std::string& tab)
+  {
+    serialize_enum_as_text(enum_info<T>::name, unsigned(instance), enum_info<T>::values, output);
+  }
+
+  static void deserialize(serialization::parser& parser, T& instance)
+  {
+    instance = (T)deserialize_enum_as_text(enum_info<T>::name, enum_info<T>::values, parser);
+  }
+};
 
 } // detail
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <class T>
+template <typename T>
 void text_serializer<T>::serialize(const T& instance, std::ostream& output, const std::string& tab)
 {
-  eve::detail::text_serializer_helper<T, std::is_arithmetic<T>::value>::serialize(instance, output, tab);
+  eve::detail::text_serializer_helper<T, std::is_arithmetic<T>::value, std::is_enum<T>::value>::serialize(instance, output, tab);
 }
 
-template <class T>
+template <typename T>
 void text_serializer<T>::deserialize(serialization::parser& parser, T& instance)
 {
-  eve::detail::text_serializer_helper<T, std::is_arithmetic<T>::value>::deserialize(parser, instance);
+  eve::detail::text_serializer_helper<T, std::is_arithmetic<T>::value, std::is_enum<T>::value>::deserialize(parser, instance);
 }
 
 template <typename T>

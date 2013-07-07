@@ -62,7 +62,7 @@ public:
     /** For default values initialization. */
     config();
 
-    eve_decl_serializable
+    eve_declare_serializable
   };
 
   struct event;

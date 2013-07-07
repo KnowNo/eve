@@ -41,51 +41,51 @@ namespace eve
 
 class pixelbuffer;
 
-class texture : public eve::deserializable_resource<texture>
+class texture : public eve::resource
 {
 public:
-  enum class type_t
+  typedef enum class type
   {
     TEX_2D,
     TEX_3D,
     RECTANGLE,
     ARRAY_2D,
     BUFFER
-  };
+  } type_t;
 
-  enum class typeformat_t
+  typedef enum class typeformat
   {
     UNSIGNED_BYTE,
     HALF_FLOAT,
     FLOAT,
-  };
+  } typeformat_t;
 
-  enum class channels_t
+  typedef enum class channels
   {
     MONO,
     DUAL,
     TRIPLE,
     QUAD
-  };
+  } channels_t;
 
-  enum class filtermode_t
+  typedef enum class filtermode
   {
     NEAREST,
     LINEAR
-  };
+  } filtermode_t;
 
-  enum class wrapmode_t
+  typedef enum class wrapmode
   {
     REPEAT,
     CLAMP_TO_EDGE,
     CLAMP_TO_BORDER
-  };
+  } wrapmode_t;
 
   static void unbind(type_t type);
 
   texture();
-  texture(typeformat_t format, channels_t channels);
-  texture(const vec2u& size, unsigned depth, type_t type, typeformat_t format, channels_t channels, filtermode_t filtermode = filtermode_t::LINEAR, wrapmode_t wrapmode = wrapmode_t::CLAMP_TO_EDGE, bool mipmap = false);
+  texture(typeformat format, channels channels);
+  texture(const vec2u& size, unsigned depth, type type, typeformat format, channels channels, filtermode filtermode = filtermode::LINEAR, wrapmode wrapmode = wrapmode::CLAMP_TO_EDGE, bool mipmap = false);
   ~texture();
 
   type_t type() const { return m_type; }
@@ -93,24 +93,30 @@ public:
   unsigned height() const { return m_size.y; }
   unsigned depth() const { return m_size.z; }
   const vec2u& size() const { return m_size.xy(); }
-  typeformat_t typeformat() const { return m_typeformat; }
-  channels_t channels() const { return m_channels; }
-  filtermode_t filtermode() const { return m_filtermode; }
-  wrapmode_t wrapmode() const { return m_wrapmode; }
+  typeformat typeformat() const { return m_typeformat; }
+  channels channels() const { return m_channels; }
+  filtermode filtermode() const { return m_filtermode; }
+  wrapmode wrapmode() const { return m_wrapmode; }
   bool mipmapped() const { return m_mipmapped; }
 
   void create(type_t type, const vec2u& size, unsigned depth, typeformat_t format, channels_t channels, filtermode_t filtermode, wrapmode_t wrapmode, bool mipmap, const void* data);
   void create(type_t type, const vec2u& size, unsigned depth, typeformat_t format, channels_t channels, filtermode_t filtermode, wrapmode_t wrapmode, bool mipmap);
   void create(type_t type, const pixelbuffer& pixelbuffer, filtermode_t filtermode, wrapmode_t wrapmode, bool mipmap);
 
-  void writeLayer(unsigned layer, const void* data);
+  void write_layer(unsigned layer, const void* data);
 
   void activate(unsigned unit = 0) const; /* API specific */
   void destroy();
 
-  //vec4 transformCoordinate(const vec2i& coordinate, const vec2i& size) const;
+  //vec4 transform_coordinate(const vec2i& coordinate, const vec2i& size) const;
 
-public:
+  void load(std::istream& source) override;
+  void unload() override;
+
+protected:
+  void on_reload() override;
+
+private:
   void setup(type_t type, const vec2u& size, unsigned depth, typeformat_t format, channels_t channels, filtermode_t filtermode, wrapmode_t wrapmode, bool mipmap);
 
   /* API specific */
@@ -133,18 +139,9 @@ public:
   bool m_mipmapped;
   resource::ptr<pixelbuffer> m_pixelbuffer;
 
-public:
-  eve_serializable_named(eve::texture,
-    (m_type, "type"),
-    (m_typeformat, "typeformat"),
-    (m_filtermode, "filtermode"),
-    (m_wrapmode, "wrapmode"),
-    (m_mipmapped, "mipmap"),
-    (m_pixelbuffer, "pixelbuffer"))
+  eve_declare_serializable
 };
 
 } //eve
-
-eve_decl_text_serializer(eve::texture::type_t)
 
 /** }@ */

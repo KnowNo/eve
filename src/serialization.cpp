@@ -120,31 +120,32 @@ eve::serialization_error::serialization_error(const std::string& file, eve::size
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void eve::detail::serialize_enum(const std::string& name, unsigned value, const std::string* labels, const unsigned* values, unsigned num_labels, std::ostream& output)
+void eve::detail::serialize_enum_as_text(const char* name, eve::uint32 instance, const enum_value* values, std::ostream& output)
 {
-   for (unsigned i = 0; i < num_labels; ++i)
+  for (unsigned i = 0; values[i].str; ++i)
   {
-    if (value == values[i])
+    if (instance == values[i].id)
     {
-      output << labels[i];
+      output << values[i].str;
       return;
     }
   }
-  throw std::runtime_error("Cannot serialize '" + name + "', invalid value " + std::to_string(value) + " found.");
+  throw std::runtime_error("Cannot serialize '" + std::string(name) + "', invalid value " + std::to_string(instance) + " found.");
 }
 
-unsigned eve::detail::deserialize_enum(const std::string& name, const std::string* labels, const unsigned* values, unsigned num_labels, serialization::parser& parser)
+unsigned eve::detail::deserialize_enum_as_text(const char* name, const enum_value* values, serialization::parser& parser)
 {
   parser.check(parser.SYMBOL);
-  for (unsigned i = 0; i < num_labels; ++i)
+  for (unsigned i = 0; values[i].str; ++i)
   {
-    if (parser.token() == labels[i])
+    if (parser.token() == values[i].str)
     {
       parser.scan();
-      return values[i];
+      return values[i].id;
     }
   }
-  throw std::runtime_error("Cannot serialize '"+ name + "', " + parser.token() + " is not a valid value.");
+  parser.scan();
+  throw std::runtime_error("Cannot serialize '"+ std::string(name) + "', " + parser.token() + " is not a valid value.");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
