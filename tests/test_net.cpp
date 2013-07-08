@@ -43,16 +43,19 @@ TEST(Net, SocketAndBuffer)
 
   auto peer = server.accept();
 
-  eve::net::buffer buf(&peer, 100);
-  eve::binarywriter bw(&buf);
-
-  bw << 3.14f;
-  
-  bw.flush();
+  {
+    eve::net::buffer buf(&peer, 2);
+    eve::binarywriter bw(&buf);
+    bw << 3.14f;
+  }
 
   float data;
 
-  client.receive_all((char*)&data, 4);
+  {
+    eve::net::buffer buf(&client, 2);
+    eve::binaryreader br(&buf);
+    br >> data;
+  }
 
   EXPECT_FLOAT_EQ(3.14f, data);
 }

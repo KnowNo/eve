@@ -99,8 +99,13 @@ public:
   };
 
 public:
+
+  /** After constructing the socket call create() for creating it. */
   socket();
+  
+  /** Creates a socket of specified @p type and @p domain. After constructing it is ready to be used. */
   socket(type type, domain domain = domain::IPv4);
+  
   socket(socket&& rhs);
   ~socket();
 

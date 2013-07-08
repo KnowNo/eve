@@ -52,6 +52,7 @@ public:
 
 protected:
   int sync() override;
+  int_type underflow() override;
   int_type overflow(int_type meta = traits::eof()) override;
 
 private:

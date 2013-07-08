@@ -35,13 +35,18 @@ buffer::buffer(eve::socket* socket)
   : m_socket(socket)
   , m_buffer(nullptr)
 {
+  setg(nullptr, nullptr, nullptr);
   setp(nullptr, nullptr);
 }
 
 buffer::buffer(eve::socket* socket, eve::size capacity)
   : m_socket(socket)
-  , m_buffer((char*)eve::allocator::global().allocate(eve_here, capacity, 1))
 {
+  capacity = std::max<eve::size>(capacity, 2);
+  auto doublecapacity = capacity * 2;
+
+  m_buffer = (char*)eve::allocator::global().allocate(eve_here, capacity, 1);
+  setg(m_buffer + capacity, m_buffer + doublecapacity, m_buffer + doublecapacity);
   setp(m_buffer, m_buffer + capacity);
 }
 
@@ -55,9 +60,16 @@ int buffer::sync()
   if (pbase() < pptr())
   {
     m_socket->send_all(pbase(), pptr() - pbase());
-    setp(m_buffer, epptr());
+    setp(pbase(), epptr());
   }
   return 0;
+}
+
+buffer::int_type buffer::underflow()
+{
+  auto bytes = m_socket->receive(eback(), gptr() - eback());
+  setg(eback(), eback(), eback() + bytes);
+  return *eback();
 }
 
 buffer::int_type buffer::overflow(int_type meta)
