@@ -31,8 +31,8 @@
 
 using namespace eve;
 
-game::game()
-  : m_app(eve::application::module::all)
+game::game(eve::flagset<application::module> modules)
+  : m_app(modules)
   , m_top(nullptr)
 {
 }

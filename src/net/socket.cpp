@@ -25,7 +25,7 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include "eve/socket.h"
+#include "eve/net/socket.h"
 
 #ifdef EVE_WINDOWS
 
@@ -119,19 +119,9 @@ eve::socket::socket()
 }
 
 eve::socket::socket(type type, domain domain)
-  : m_type(type)
-  , m_state(state::closed)
-  , m_address(domain)
-  , m_blocking(true)
+  : socket()
 {
-  m_pimpl.as<SOCKET>() = sys_socket(
-    domain == domain::IPv4 ? AF_INET : AF_INET6,
-    type == type::stream ? SOCK_STREAM : SOCK_DGRAM,
-    0
-  );
-
-  if (m_pimpl.as<SOCKET>() == INVALID_SOCKET)
-    throw eve::socket_error("Could not create new socket.", WSAGetLastError());
+  create(type, domain);
 }
 
 eve::socket::socket(socket&& rhs)
@@ -152,6 +142,26 @@ eve::socket::~socket()
     shutdown();
     closesocket(m_pimpl.as<SOCKET>());
   }
+}
+
+void eve::socket::create(type type, domain domain)
+{
+  if (m_pimpl.as<SOCKET>() != 0)
+    throw socket_error("Socket already created.");
+
+  m_address = address(domain);
+
+  m_pimpl.as<SOCKET>() = sys_socket(
+    domain == domain::IPv4 ? AF_INET : AF_INET6,
+    type == type::stream ? SOCK_STREAM : SOCK_DGRAM,
+    0
+  );
+
+  if (m_pimpl.as<SOCKET>() == INVALID_SOCKET)
+    throw eve::socket_error("Could not create new socket.", WSAGetLastError());
+
+  m_type = type;
+  m_state = state::closed;
 }
 
 void eve::socket::listen(eve::uint32 port, eve::size backlog)

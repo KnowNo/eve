@@ -25,105 +25,51 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/debug.h>
-#include <eve/storage.h>
-#include <eve/allocator.h>
-#include <eve/application.h>
-#include <eve/path.h>
-#include <eve/binary.h>
-#include <sstream>
-#include <fstream>
+#include "eve/net/buffer.h"
+#include "eve/net/socket.h"
+#include "eve/allocator.h"
 
-TEST(Lib, debug)
+using namespace eve::net;
+
+buffer::buffer(eve::socket* socket)
+  : m_socket(socket)
+  , m_buffer(nullptr)
 {
-  eve_assert(2 > 1);
+  setp(nullptr, nullptr);
 }
 
-TEST(Lib, storage)
+buffer::buffer(eve::socket* socket, eve::size capacity)
+  : m_socket(socket)
+  , m_buffer((char*)eve::allocator::global().allocate(eve_here, capacity, 1))
 {
-  eve::application app(eve::application::module::memory_debugger);
+  setp(m_buffer, m_buffer + capacity);
+}
 
-  eve::fixed_storage<7, 1> data1;
-  
-  (void)data1;
-  EXPECT_EQ(7, sizeof(data1));
+buffer::~buffer()
+{
+  eve::allocator::global().deallocate(eve_here, m_buffer);
+}
 
-  eve::fixed_storage<8, 4> data4;
-
-  EXPECT_EQ(0, (eve::uint64)&data4 % 4);
-  EXPECT_EQ(8, sizeof(data4));
-
-  eve::fixed_storage<32, 16> data16;
- 
-  EXPECT_EQ(0, (eve::uint64)&data16 % 16);
-  EXPECT_EQ(32, sizeof(data16));
-
-  struct Foo
+int buffer::sync()
+{
+  if (pbase() < pptr())
   {
-    int value;
-    Foo(int val) : value(val) { }
-    ~Foo() { }
-  };
-
-  auto foo = eve::storage::create<Foo>(eve_here, data16, 42);
-  EXPECT_EQ(42, foo->value);
-  eve::destroy(eve_here, foo);
-
-  eve::dyn_storage<1, eve_alignof(Foo)> dynstorage;
-
-  struct Bar
-  {
-    int value;
-    char dummy[100];
-    Bar(int val) : value(val) { }
-    ~Bar() { }
-  };
-
-  auto bar = eve::storage::create<Bar>(eve_here, dynstorage, 42);
-  EXPECT_EQ(42, bar->value);
-  EXPECT_TRUE(dynstorage.exceeds());
-  eve::destroy(eve_here, bar);
+    m_socket->send_all(pbase(), pptr() - pbase());
+    setp(m_buffer, epptr());
+  }
+  return 0;
 }
 
-TEST(Lib, allocator)
+buffer::int_type buffer::overflow(int_type meta)
 {
-  eve::application app(eve::application::module::memory_debugger);
-
-  eve::allocator::heap h;
-  eve::allocator::any a(&h);
-}
-
-TEST(Lib, path)
-{
-  eve::application app(eve::application::module::memory_debugger);
-
-  std::string path = "C:/Foo/file.txt";
-
-  eve::path::pop(path);
-  eve::path::push(path, "\\file2.txt");
+  if (traits::eq_int_type(traits::eof(), meta))
+    return traits::not_eof(meta);
   
-  auto filename = eve::path::pop(path);
-  EXPECT_EQ("file2.txt", filename);
-  EXPECT_EQ("C:/Foo", path);
-}
+  sync();
 
-TEST(Lib, binary)
-{
-  eve::application app(eve::application::module::memory_debugger);
+  *pptr() = meta;
+  pbump(1);
 
-  std::stringstream ss;
+  return meta;
 
-  eve::binarywriter bw(ss.rdbuf());
-
-  bw << 3.14f << "hello";
-
-  eve::binaryreader br(ss.rdbuf());
-
-  float f;
-  std::string str;
-  br >> f >> str;
-
-  EXPECT_FLOAT_EQ(3.14f, f);
-  EXPECT_EQ("hello", str);
 }

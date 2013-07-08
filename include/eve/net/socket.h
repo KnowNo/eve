@@ -27,8 +27,8 @@
 
 #pragma once
 
-#include "storage.h"
-#include "exceptions.h"
+#include "eve/storage.h"
+#include "eve/exceptions.h"
 #include <string>
 
 /** \addtogroup Net
@@ -49,7 +49,7 @@ public:
 
 /** This class provides a thin platform-independent abstraction layer over system sockets
     used for networking. */
-class socket : uncopyable
+class socket : private uncopyable
 {
 public:
   enum class type : uint8
@@ -79,7 +79,7 @@ public:
   class address
   {
   public:
-    address(domain domain);
+    address(domain domain = domain::IPv4);
     address(int port, domain domain = domain::IPv4);
     address(const std::string& hostname, int port, domain domain = domain::IPv4);
     ~address();
@@ -98,6 +98,7 @@ public:
     friend class socket;
   };
 
+public:
   socket();
   socket(type type, domain domain = domain::IPv4);
   socket(socket&& rhs);
@@ -105,6 +106,9 @@ public:
 
   /** @returns the current state of the socket. */
   state state() const { return m_state; }
+
+  /** Creates a new socket. If already created throws a socket_error. */
+  void create(type type = type::stream, domain domain = domain::IPv4);
 
   /** Makes this socket listen for connections at port @p and any address.
       @param backlog is the maximum number of pending connections waiting to be accepted.
@@ -193,6 +197,8 @@ private:
   bool m_blocking;
   fixed_storage<eve_sizeof(void*), eve_alignof(void*)> m_pimpl;
 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 } // eve
 

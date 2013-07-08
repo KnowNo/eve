@@ -43,7 +43,7 @@ public:
   struct time;
   class state;
 
-  game();
+  game(eve::flagset<application::module> modules = application::module::graphics | application::module::memory_debugger);
   ~game();
 
   eve::window& window() { return m_window; }
