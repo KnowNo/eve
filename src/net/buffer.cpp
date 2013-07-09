@@ -31,14 +31,6 @@
 
 using namespace eve::net;
 
-buffer::buffer(eve::socket* socket)
-  : m_socket(socket)
-  , m_buffer(nullptr)
-{
-  setg(nullptr, nullptr, nullptr);
-  setp(nullptr, nullptr);
-}
-
 buffer::buffer(eve::socket* socket, eve::size capacity)
   : m_socket(socket)
 {
@@ -52,7 +44,8 @@ buffer::buffer(eve::socket* socket, eve::size capacity)
 
 buffer::~buffer()
 {
-  eve::allocator::global().deallocate(eve_here, m_buffer);
+  if (m_buffer)
+    eve::allocator::global().deallocate(eve_here, m_buffer);
 }
 
 int buffer::sync()
@@ -76,7 +69,7 @@ buffer::int_type buffer::overflow(int_type meta)
 {
   if (traits::eq_int_type(traits::eof(), meta))
     return traits::not_eof(meta);
-  
+
   sync();
 
   *pptr() = meta;

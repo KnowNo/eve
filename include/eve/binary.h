@@ -93,7 +93,7 @@ public:
   binaryreader& operator>>(float& rhs) { read4(&rhs); return *this; }
   binaryreader& operator>>(double& rhs) { read8(&rhs); return *this; }
   binaryreader& operator>>(std::string& rhs);
-
+  
 private:
   void read1(void* data);
   void read2(void* data);
@@ -101,6 +101,21 @@ private:
   void read8(void* data);
 
   std::streambuf* m_buffer;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class binaryformatter : public binaryreader, public binarywriter
+{
+public:
+  binaryformatter(std::streambuf* buffer)
+    : binaryreader(buffer), binarywriter(buffer) { }
+
+  void buffer(std::streambuf* buffer) 
+  { 
+    binaryreader::buffer(buffer);
+    binarywriter::buffer(buffer);
+  }
 };
 
 } // eve

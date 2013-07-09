@@ -41,13 +41,12 @@ class socket;
 
 namespace net {
 
-class buffer : public std::streambuf, private uncopyable
+class buffer : private uncopyable, public std::streambuf
 {
 public:
   typedef std::char_traits<char> traits;
 
-  buffer(eve::socket* socket);
-  buffer(eve::socket* socket, eve::size capacity);
+  buffer(eve::socket* socket, eve::size capacity = 512);
   ~buffer();
 
 protected:

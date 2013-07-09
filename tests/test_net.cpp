@@ -46,16 +46,18 @@ TEST(Net, SocketAndBuffer)
   {
     eve::net::buffer buf(&peer, 2);
     eve::binarywriter bw(&buf);
-    bw << 3.14f;
+    bw << (unsigned char)1 << "hello foo";
   }
 
-  float data;
+  unsigned char ch;
+  bool flag;
+  std::string data;
 
   {
     eve::net::buffer buf(&client, 2);
     eve::binaryreader br(&buf);
-    br >> data;
+    br >> ch >> data;
   }
 
-  EXPECT_FLOAT_EQ(3.14f, data);
+  EXPECT_EQ("hello foo", data);
 }

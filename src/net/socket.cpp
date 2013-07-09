@@ -240,6 +240,9 @@ bool eve::socket::try_receive(char* buffer, eve::size& size)
 
 void eve::socket::shutdown()
 {
+  if (m_state == state::invalid)
+    throw socket_error("Trying to shutdown an invalid socket.");
+
   if (m_state != state::closed)
   {
     sys_shutdown(m_pimpl.as<SOCKET>(), 2);
