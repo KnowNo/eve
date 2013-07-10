@@ -46,8 +46,19 @@ class buffer : private uncopyable, public std::streambuf
 public:
   typedef std::char_traits<char> traits;
 
+  /** Constructs this buffer and links it to @p socket.
+      It allocates an internal buffer with enough size so that
+      both send and receive buffers size are at least as big as
+      @p capacity. Therefore allocated buffer is double @p capacity. */
   buffer(eve::socket* socket, eve::size capacity = 512);
+  buffer(buffer&& rhs);
   ~buffer();
+
+  /** Tries to receive some bytes into the input buffer.
+      @returns true when input buffer is non empty, false otherwise. */
+  bool try_fill();
+
+  buffer& operator=(buffer&& rhs);
 
 protected:
   int sync() override;
@@ -55,6 +66,8 @@ protected:
   int_type overflow(int_type meta = traits::eof()) override;
 
 private:
+  void validate() const;
+
   socket* m_socket;
   char* m_buffer;
 };

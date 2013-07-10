@@ -38,7 +38,7 @@
 #ifndef EVE_RELEASE
 
 /** A string containing file and line. */
-#define eve_str_source_location "function " eve_function_name " in file " __FILE__ " at line " eve_pp_stringify(__LINE__)
+#define eve_str_source_location "in function " eve_function_name " in file " __FILE__ " at line " eve_pp_stringify(__LINE__)
 
 #define eve_assert(condition) if (!(condition)) eve::abort("Assertion fail (" #condition ") in " eve_str_source_location ".")
 #define eve_debug_code(...) __VA_ARGS__
@@ -50,7 +50,7 @@
 
 #endif
 
-#define eve_internal_error eve::abort(("Internal error at " eve_file_line "."))
+#define eve_internal_error eve::abort(("Internal error " eve_str_source_location "."))
 
 /** \addtogroup Lib
   * @{

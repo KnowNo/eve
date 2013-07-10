@@ -137,8 +137,9 @@ eve::socket::socket(socket&& rhs)
 
 eve::socket::~socket()
 {
-  if (m_pimpl.as<SOCKET>() != 0)
+  if (m_state != state::invalid)
   {
+    eve_assert(m_pimpl.as<SOCKET>() != 0);
     shutdown();
     closesocket(m_pimpl.as<SOCKET>());
   }
@@ -206,7 +207,7 @@ void eve::socket::send_all(const char* data, eve::size size)
   const char* ptr = data;
   const char* end = data + size;
   while (ptr < end)
-    ptr += send(data, eve::size(end - ptr));
+    ptr += send(ptr, eve::size(end - ptr));
 }
 
 eve::size eve::socket::receive(char* buffer, eve::size size)
@@ -241,7 +242,7 @@ bool eve::socket::try_receive(char* buffer, eve::size& size)
 void eve::socket::shutdown()
 {
   if (m_state == state::invalid)
-    throw socket_error("Trying to shutdown an invalid socket.");
+    return;
 
   if (m_state != state::closed)
   {

@@ -128,7 +128,7 @@ binaryreader& binaryreader::operator>>(std::string& rhs)
 
 void binaryreader::read1(void* data)
 {
-  *(char*)data = m_buffer->sgetc();
+  *(char*)data = m_buffer->sbumpc();
 }
 
 

@@ -37,9 +37,15 @@ buffer::buffer(eve::socket* socket, eve::size capacity)
   capacity = std::max<eve::size>(capacity, 2);
   auto doublecapacity = capacity * 2;
 
-  m_buffer = (char*)eve::allocator::global().allocate(eve_here, capacity, 1);
-  setg(m_buffer + capacity, m_buffer + doublecapacity, m_buffer + doublecapacity);
-  setp(m_buffer, m_buffer + capacity);
+  m_buffer = (char*)eve::allocator::global().allocate(eve_here, doublecapacity, 1);
+  setg(m_buffer, m_buffer + capacity, m_buffer + capacity);
+  setp(m_buffer + capacity, m_buffer + doublecapacity);
+}
+
+buffer::buffer(buffer&& rhs)
+  : m_buffer(nullptr)
+{
+  *this = std::move(rhs);
 }
 
 buffer::~buffer()
@@ -48,11 +54,47 @@ buffer::~buffer()
     eve::allocator::global().deallocate(eve_here, m_buffer);
 }
 
+bool buffer::try_fill()
+{
+  validate();
+
+  if (gptr() < egptr())
+    return true;
+
+  auto capacity = (epptr() - eback()) >> 1;
+  eve::size bytes = eve::size(capacity);
+  if (!m_socket->try_receive(eback(), bytes))
+    return false;
+  setg(eback(), eback(), eback() + bytes);
+  return true;
+}
+
+buffer& buffer::operator=(buffer&& rhs)
+{
+  if (m_buffer)
+    eve::allocator::global().deallocate(eve_here, m_buffer);
+
+  m_socket = rhs.m_socket;
+  m_buffer = rhs.m_buffer;
+  setp(rhs.pbase(), rhs.epptr());
+  pbump(int(rhs.pptr() - rhs.pbase()));
+  setg(rhs.eback(), rhs.gptr(), rhs.egptr());
+
+  rhs.m_socket = nullptr;
+  rhs.m_buffer = nullptr;
+  rhs.setp(nullptr, nullptr);
+  rhs.setg(nullptr, nullptr, nullptr);
+
+  return *this;
+}
+
 int buffer::sync()
 {
+  validate();
+
   if (pbase() < pptr())
   {
-    m_socket->send_all(pbase(), pptr() - pbase());
+    m_socket->send_all(pbase(), int(pptr() - pbase()));
     setp(pbase(), epptr());
   }
   return 0;
@@ -60,13 +102,17 @@ int buffer::sync()
 
 buffer::int_type buffer::underflow()
 {
-  auto bytes = m_socket->receive(eback(), gptr() - eback());
+  validate();
+  auto capacity = (epptr() - eback()) >> 1;
+  auto bytes = m_socket->receive(eback(), capacity);
   setg(eback(), eback(), eback() + bytes);
   return *eback();
 }
 
 buffer::int_type buffer::overflow(int_type meta)
 {
+  validate();
+
   if (traits::eq_int_type(traits::eof(), meta))
     return traits::not_eof(meta);
 
@@ -76,5 +122,10 @@ buffer::int_type buffer::overflow(int_type meta)
   pbump(1);
 
   return meta;
+}
 
+void buffer::validate() const
+{
+  if (!m_socket)
+    throw std::runtime_error("Network buffer has no socket associated to.");
 }
