@@ -110,8 +110,8 @@ void terminate_memory_debugger()
     for (auto& alloc: s_allocations)
       ofs << "  - " << "In function " << alloc.second.function
                     << " in file " << alloc.second.file
-                    << " at line:\n      " << alloc.second.line
-                    << " ptr " << alloc.second.ptr
+                    << " at line " << alloc.second.line
+                    << ":\n      ptr " << alloc.second.ptr
                     << " in heap: " << alloc.second.inheap
                     << " allocations: " << alloc.second.allocations;
   }

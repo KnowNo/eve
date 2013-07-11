@@ -35,6 +35,13 @@
 #include <sstream>
 #include <fstream>
 
+struct Foo
+{
+  int value;
+  Foo(int val) : value(val) { }
+  ~Foo() { }
+};
+
 TEST(Lib, debug)
 {
   eve_assert(2 > 1);
@@ -59,12 +66,6 @@ TEST(Lib, storage)
   EXPECT_EQ(0, (eve::uint64)&data16 % 16);
   EXPECT_EQ(32, sizeof(data16));
 
-  struct Foo
-  {
-    int value;
-    Foo(int val) : value(val) { }
-    ~Foo() { }
-  };
 
   auto foo = eve::storage::create<Foo>(eve_here, data16, 42);
   EXPECT_EQ(42, foo->value);
@@ -92,6 +93,10 @@ TEST(Lib, allocator)
 
   eve::allocator::heap h;
   eve::allocator::any a(&h);
+
+  auto foo = eve_new Foo(33);
+  foo->value = 10;
+  eve_delete(foo);
 }
 
 TEST(Lib, path)

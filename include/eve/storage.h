@@ -44,7 +44,7 @@ namespace eve
 /** A POD type suitable for use as uninitialized storage for any object whose
   * size is at most Len and whose alignment requirement is a divisor of Align */
 template<eve::size Size, eve::size Align = 8U>
-class fixed_storage
+class fixed_storage : private uncopyable
 {
 public:
    /** @returns the size of fixed storage buffer. */
@@ -93,7 +93,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 template <eve::size Size, eve::size Align = 8U>
-class dyn_storage
+class dyn_storage : private uncopyable
 {
 public:
   dyn_storage(const allocator::any& alloc = &eve::allocator::global())

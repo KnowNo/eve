@@ -58,29 +58,39 @@ void terminate_net()
 
 eve::socket::address::address(domain domain)
 {
+  m_pimpl.construct<sockaddr_in>(eve_here);
   initialize(domain); 
 }
 
 eve::socket::address::address(int port, domain domain)
 {
+  m_pimpl.construct<sockaddr_in>(eve_here);
   set(port, domain);
 }
 
 eve::socket::address::address(const std::string& hostname, int port, domain domain)
 {
+  m_pimpl.construct<sockaddr_in>(eve_here);
   set(hostname, port, domain);
+}
+
+eve::socket::address::address(const address& rhs)
+{
+  m_domain = rhs.m_domain;
+  m_pimpl.construct<sockaddr_in>(eve_here);
+  memcpy(&m_pimpl, rhs.m_pimpl, sizeof(sockaddr_in));
 }
 
 eve::socket::address::~address()
 {
-  eve::destroy<SOCKADDR_IN>(eve_here, &m_pimpl.as<SOCKADDR_IN>());
+  eve::destroy<sockaddr_in>(eve_here, &m_pimpl.as<sockaddr_in>());
 }
 
 void eve::socket::address::set(int port, domain domain)
 {
   initialize(domain);
 
-  auto& addr = m_pimpl.as<SOCKADDR_IN>(); 
+  auto& addr = m_pimpl.as<sockaddr_in>(); 
   addr.sin_addr.s_addr = INADDR_ANY;
   addr.sin_port = htons(port);
 }
@@ -89,7 +99,7 @@ void eve::socket::address::set(const std::string& hostname, int port, domain dom
 {
   set(port, domain);
 
-  auto& addr = m_pimpl.as<SOCKADDR_IN>(); 
+  auto& addr = m_pimpl.as<sockaddr_in>(); 
   // resolve hostname
   hostent* he;
   if ( (he = gethostbyname(hostname.c_str()) ) == NULL )
@@ -99,12 +109,18 @@ void eve::socket::address::set(const std::string& hostname, int port, domain dom
   memcpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);
 }
 
+eve::socket::address& eve::socket::address::operator=(const address& rhs)
+{
+  m_domain = rhs.m_domain;
+  memcpy(&m_pimpl, rhs.m_pimpl, sizeof(sockaddr_in));
+  return *this;
+}
+
 void eve::socket::address::initialize(domain domain)
 {
   m_domain = domain;
-  m_pimpl.construct<SOCKADDR_IN>(eve_here);
-  auto& addr = m_pimpl.as<SOCKADDR_IN>(); 
-  memset(&addr, 0, sizeof(SOCKADDR_IN));
+  auto& addr = m_pimpl.as<sockaddr_in>(); 
+  memset(&addr, 0, sizeof(sockaddr_in));
   addr.sin_family = m_domain == domain::IPv4 ? AF_INET : AF_INET6;
 }
 
@@ -173,7 +189,7 @@ void eve::socket::listen(eve::uint32 port, eve::size backlog)
   make_blocking(true);
   m_address.set(port, m_address.m_domain);
 
-  auto& sa = m_address.m_pimpl.as<SOCKADDR_IN>();
+  auto& sa = m_address.m_pimpl.as<sockaddr_in>();
 
   if (bind(m_pimpl.as<SOCKET>(), (sockaddr*)&sa, sizeof(address)) < 0)
     throw eve::socket_error("Cannot bind socket to address.", WSAGetLastError());

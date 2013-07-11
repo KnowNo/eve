@@ -42,7 +42,7 @@ namespace eve { namespace allocator {
 class heap : uncopyable
 {
 public:
-  void* allocate(eve_source_location_args, eve::size size, uint8 align);
+  void* allocate(eve_source_location_args, size_t size, uint8 align);
   void  deallocate(eve_source_location_args, const void* ptr);
 };
 

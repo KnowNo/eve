@@ -82,6 +82,7 @@ public:
     address(domain domain = domain::IPv4);
     address(int port, domain domain = domain::IPv4);
     address(const std::string& hostname, int port, domain domain = domain::IPv4);
+    address(const address& rhs);
     ~address();
 
     /** Sets this address to any address and port @p port. */
@@ -89,12 +90,14 @@ public:
     
     /** Sets this address to hostname @p hostname and port @p port. */
     void set(const std::string& hostname, int port, domain domain = domain::IPv4);
+    
+    address& operator=(const address& rhs);
 
   private:
     void initialize(domain domain);
 
     domain m_domain;
-    fixed_storage<24> m_pimpl;
+    fixed_storage<16> m_pimpl;
     friend class socket;
   };
 

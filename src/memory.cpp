@@ -25,45 +25,16 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#pragma once
+#include "eve/memory.h"
 
-#include "eve/allocator.h"
-
-#ifdef EVE_WINDOWS
-#include <Windows.h>
-#else
-#include <stdalign.h>
-#endif
-
-using namespace eve;
-using namespace eve::allocator;
-
-void* heap::allocate(eve_source_location_args, size_t size, uint8 align)
+void* operator new(size_t size, eve_source_location_args)
 {
-  eve_assert(size > 0 && align > 0);
-#ifdef EVE_WINDOWS
-  auto ptr = _aligned_malloc(size, align);
-#else
-  auto ptr = aligned_alloc(align, size);
-#endif
-  eve::memory_debugger::track(eve_forward_source_location_args, ptr, false);
-  return ptr;
+  if (size == 0)
+    size = 1;
+  return eve::allocator::global().allocate(eve_forward_source_location_args, size, 8U);
 }
 
-void heap::deallocate(eve_source_location_args, const void* ptr)
+void operator delete(void* ptr, eve_source_location_args)
 {
-  eve::memory_debugger::untrack(eve_forward_source_location_args, ptr, false);
-#ifdef EVE_WINDOWS
-  _aligned_free(const_cast<void*>(ptr));
-#else
-  free(const_cast<void*>(ptr));
-#endif
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-heap& eve::allocator::global()
-{
-  static heap instance;
-  return instance;
+  eve::allocator::global().deallocate(eve_forward_source_location_args, ptr);
 }

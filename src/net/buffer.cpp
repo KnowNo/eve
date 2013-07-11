@@ -103,7 +103,7 @@ int buffer::sync()
 buffer::int_type buffer::underflow()
 {
   validate();
-  auto capacity = (epptr() - eback()) >> 1;
+  auto capacity = size(epptr() - eback()) >> 1;
   auto bytes = m_socket->receive(eback(), capacity);
   setg(eback(), eback(), eback() + bytes);
   return *eback();

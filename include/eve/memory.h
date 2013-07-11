@@ -132,3 +132,9 @@ typename unique_ptr<T>::type make_unique(Args&&... args)
 }
 
 } // eve
+
+void* operator new(size_t size, eve_source_location_args);
+void operator delete(void* ptr, eve_source_location_args);
+
+#define eve_new new(eve_here)
+#define eve_delete(ptr) eve::destroy(eve_here, eve::allocator::global(), ptr)
