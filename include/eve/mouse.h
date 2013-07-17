@@ -29,6 +29,10 @@
 
 #include "math/detail/vec2.h"
 
+/** \addtogroup Lib
+  * @{
+  */
+
 namespace eve
 {
 
@@ -62,3 +66,5 @@ private:
 };
 
 } // eve
+
+/** }@ */

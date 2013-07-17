@@ -37,7 +37,7 @@ buffer::buffer(eve::socket* socket, eve::size capacity)
   capacity = std::max<eve::size>(capacity, 2);
   auto doublecapacity = capacity * 2;
 
-  m_buffer = (char*)eve::allocator::global().allocate(eve_here, doublecapacity, 1);
+  m_buffer = (char*)eve::allocator::global().allocate(doublecapacity, 1);
   setg(m_buffer, m_buffer + capacity, m_buffer + capacity);
   setp(m_buffer + capacity, m_buffer + doublecapacity);
 }
@@ -51,7 +51,7 @@ buffer::buffer(buffer&& rhs)
 buffer::~buffer()
 {
   if (m_buffer)
-    eve::allocator::global().deallocate(eve_here, m_buffer);
+    eve::allocator::global().deallocate(m_buffer);
 }
 
 bool buffer::try_fill()
@@ -72,7 +72,7 @@ bool buffer::try_fill()
 buffer& buffer::operator=(buffer&& rhs)
 {
   if (m_buffer)
-    eve::allocator::global().deallocate(eve_here, m_buffer);
+    eve::allocator::global().deallocate(m_buffer);
 
   m_socket = rhs.m_socket;
   m_buffer = rhs.m_buffer;

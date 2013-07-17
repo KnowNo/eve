@@ -25,38 +25,76 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/net/socket.h>
-#include <eve/net/buffer.h>
-#include <eve/binary.h>
+#pragma once
 
-TEST(Net, SocketAndBuffer)
+#include "platform.h"
+#include "storage.h"
+#include <ostream>
+
+/** \addtogroup Lib
+  * @{
+  */
+
+namespace eve {
+
+class callstack
 {
-  eve::application app(eve::application::module::networking | eve::application::module::memory_debugger);
+public:
+  static const size k_max_trace_size = 8;
 
-  eve::socket server(eve::socket::type::stream);
-  server.listen(10000, 4);
-
-  eve::socket client(eve::socket::type::stream);
-  client.connect(eve::socket::address("localhost", 10000));
-
-  auto peer = server.accept();
-
+  class symbol
   {
-    eve::net::buffer buf(&peer, 2);
-    eve::binarywriter bw(&buf);
-    bw << (unsigned char)1 << "hello foo";
-  }
+  public:
+    symbol();
+    
+    /** @returns the name of the function. */
+    const char* function() const { return m_function; }
 
-  unsigned char ch;
-  std::string data;
+    /** @returns the filename of the source file where the frame function is called. */
+    const char* file() const { return m_file; }
 
-  {
-    eve::net::buffer buf(&client, 2);
-    eve::binaryreader br(&buf);
-    br >> ch >> data;
-  }
+    /** @returns the line in the source file where the frame function is called. */
+    eve::size line() const { return m_line; }
 
-  EXPECT_EQ("hello foo", data);
-}
+  private:
+    static const size k_max_function_length = 64;
+    char m_function[k_max_function_length];
+    const char* m_file;
+    eve::size m_line;
+    friend class callstack;
+  };
+
+  /** Constructs a callstack. If @p capture is true, it will capture the
+      stack trace on creation.
+      @see capture() */
+  callstack(bool capture = true, eve::size skipframes = 0);
+
+  /** Captures the current stack trace.
+      @param skipframes Is the number of frames to skip before from the top.
+      @note capture() itself is skipped. */
+  void capture(eve::size skipframes = 0);
+
+  /** @returns the number of captured frames. */
+  eve::size size() const { return m_size; }
+
+  /** @returns a hash number. Identical stack frames have equal hash number. */
+  uint32 hash() const { return m_hash; }
+
+  /** Resolves the trace with index @p index and returns the corresponding symbol. */
+  symbol fetch(eve::size index) const;
+
+  //// Operators ////
+  bool operator==(const callstack& rhs) const { return m_hash == rhs.m_hash; }
+  bool operator<(const callstack& rhs) const { return m_hash < rhs.m_hash; }
+
+private:
+  uint32 m_hash;
+  void* m_trace[k_max_trace_size];
+  uint16 m_size;
+};
+
+} // eve
+
+std::ostream& operator<<(std::ostream& output, const eve::callstack& callstack);
+
+/** }@ */

@@ -111,7 +111,7 @@ void resource::ptr<T, Param>::reset(T* res)
     if (--m_resource->m_references == 0)
     {
       m_resource->unload();
-      eve::destroy(eve_here, eve::allocator::global(), m_resource);
+      eve::global_destroy(m_resource);
     }
   }
 
@@ -125,7 +125,7 @@ void resource::ptr<T, Param>::reset(T* res)
 template <class T, class Param>
 T* resource::helper<T, Param>::create_resource()
 {
-  return eve::create<T>(eve_here, eve::allocator::global(), param);
+  return eve_new T(param);
 }
 
 template<class T>
@@ -133,7 +133,7 @@ struct resource::helper<T, void>
 {
   T* create_resource()
   {
-    return eve::create<T>(eve_here, eve::allocator::global());
+    return eve_new T;
   }
 };
 

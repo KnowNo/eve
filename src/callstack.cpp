@@ -25,38 +25,84 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/net/socket.h>
-#include <eve/net/buffer.h>
-#include <eve/binary.h>
+#include "eve/callstack.h"
+#include "eve/debug.h"
+#include <cstring>
 
-TEST(Net, SocketAndBuffer)
+using namespace eve;
+
+#ifdef _MSC_VER
+
+#include <Windows.h>
+#include <DbgHelp.h>
+
+static const HANDLE s_process = GetCurrentProcess();
+
+callstack::symbol::symbol()
+  : m_file("")
+  , m_line(0)
 {
-  eve::application app(eve::application::module::networking | eve::application::module::memory_debugger);
+  m_function[0] = 0;
+}
 
-  eve::socket server(eve::socket::type::stream);
-  server.listen(10000, 4);
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  eve::socket client(eve::socket::type::stream);
-  client.connect(eve::socket::address("localhost", 10000));
+callstack::callstack(bool capture, eve::size skipframes)
+{
+  m_hash = 0;
+  m_size = 0;
 
-  auto peer = server.accept();
+  if (capture)
+    this->capture(skipframes + 1);
+}
 
+void callstack::capture(eve::size skipframes)
+{
+  m_size = CaptureStackBackTrace(skipframes + 1, k_max_trace_size, m_trace, (PDWORD)&m_hash);
+}
+
+
+callstack::symbol callstack::fetch(eve::size index) const
+{
+  eve_assert(index < m_size);
+
+  fixed_storage<sizeof(SYMBOL_INFO) + 64> storage;
+  auto& symbolinfo = storage.as<SYMBOL_INFO>();
+  symbolinfo.MaxNameLen = 64;
+  symbolinfo.SizeOfStruct = sizeof(SYMBOL_INFO);
+  symbolinfo.Name[0] = 0;
+  symbolinfo.Address = 0;
+
+  symbol symbol;
+
+  if (SymFromAddr(s_process, (DWORD64)(m_trace[index]), 0, &symbolinfo))
   {
-    eve::net::buffer buf(&peer, 2);
-    eve::binarywriter bw(&buf);
-    bw << (unsigned char)1 << "hello foo";
+    memcpy(symbol.m_function, symbolinfo.Name, symbolinfo.NameLen);
+    symbol.m_function[symbolinfo.NameLen] = 0;
+  }
+  
+  IMAGEHLP_LINE info;
+  info.SizeOfStruct = sizeof(IMAGEHLP_LINE);
+  DWORD  dwDisplacement;
+  if (SymGetLineFromAddr(s_process, (DWORD64)(symbolinfo.Address), &dwDisplacement, &info))
+  {
+    symbol.m_file = info.FileName;
+    symbol.m_line = info.LineNumber + 1;
   }
 
-  unsigned char ch;
-  std::string data;
+  return symbol;
+}
 
+#else
+#error Implement callstacks on this platform.
+#endif
+
+std::ostream& operator<<(std::ostream& output, const eve::callstack& callstack)
+{
+  for (eve::size i = 0; i < callstack.size(); ++i)
   {
-    eve::net::buffer buf(&client, 2);
-    eve::binaryreader br(&buf);
-    br >> ch >> data;
+    const auto& symbol = callstack.fetch(i);
+    output << i + 1 << ") " << symbol.function() << "\n   In " << symbol.file() << ":" << symbol.line() << "\n";
   }
-
-  EXPECT_EQ("hello foo", data);
+  return output;
 }

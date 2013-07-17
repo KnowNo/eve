@@ -26,10 +26,12 @@
 \******************************************************************************/
 
 #include "eve/debug.h"
+#include "eve/callstack.h"
 #include <string>
 #include <iostream>
 #include <cstdint>
 #include <fstream>
+#include <sstream>
 
 #ifndef EVE_RELEASE
 #  include <mutex>
@@ -54,8 +56,11 @@ void eve::abort(const char* message)
   eve::show_error(message);
 
 #ifndef EVE_RELEASE
-  struct uncatchable_exception {};
-  throw uncatchable_exception();
+#ifdef _MSC_VER
+  DebugBreak();
+#else
+#  error Implement debug break on this system.
+#endif
 #else
   ::abort();
 #endif // EVE_RELEASE
@@ -63,24 +68,16 @@ void eve::abort(const char* message)
 
 // MEMORY DEBUGGER /////////////////////////////////////////////////////////////////////////////////
 
-eve::memory_error::memory_error(const void* ptr, const std::string& error) throw()
-  : std::logic_error(error), m_ptr(ptr)
-{
-}
-
 #ifndef EVE_RELEASE
 
 struct allocation
 {
-  const char* function;
-  const char* file;
-  unsigned line;
+  eve::callstack callstack;
   const void* ptr;
   bool inheap;
   eve::size allocations;
 };
 
-static bool s_initialized = false;
 static bool s_enabled = false;
 static std::mutex s_mutex;
 static std::unordered_map<const void*, allocation> s_allocations;
@@ -90,12 +87,11 @@ namespace eve {
 void initialize_memory_debugger(bool enabled)
 {
   s_enabled = enabled;
-  s_initialized = true;
 }
 
 void terminate_memory_debugger()
 {
-  if (s_initialized && s_enabled)
+  if (s_enabled)
   {
     std::lock_guard<std::mutex> lock(s_mutex);
 
@@ -108,58 +104,50 @@ void terminate_memory_debugger()
       ofs << " -  No leaks found, nice job.\n";
 
     for (auto& alloc: s_allocations)
-      ofs << "  - " << "In function " << alloc.second.function
-                    << " in file " << alloc.second.file
-                    << " at line " << alloc.second.line
-                    << ":\n      ptr " << alloc.second.ptr
+    {
+      ofs << "  - " << " Address " << alloc.second.ptr
                     << " in heap: " << alloc.second.inheap
-                    << " allocations: " << alloc.second.allocations;
+                    << " allocations: " << alloc.second.allocations
+                    << ".\n Callstack: \n";
+
+      ofs << alloc.second.callstack;
+    }
+
+    if (s_allocations.size() > 0)
+      eve::show_error("Memory debugger: leaks detected. See eve_memory_debugger_report.txt for more info.");
   }
 
-  s_initialized = false;
   s_enabled = false;
   s_allocations.clear();
 }
 
 } // eve
 
-static void check_initialization()
-{
-  if (!s_initialized)
-    throw std::runtime_error("Memory debugger not initialized. Have you sure you're using an eve::application?");
-}
-
 static void report_error(const void* ptr, const std::string& message)
 {
-  throw eve::memory_error(ptr, message);
+  eve::abort(message.c_str());
 }
 
 static void report_error(const allocation& alloc, const void* ptr, const std::string& message)
 {
-  std::string msg = message;
-  msg += "\nAllocation performed in function ";
-  msg += alloc.function;
-  msg += " in file ";
-  msg += alloc.file;
-  msg += " at line ";
-  msg += std::to_string(alloc.line);
-  msg += ".";
-  report_error(ptr, msg);
+  std::stringstream ss;
+  ss << message;
+  ss << "\nCallstack:\n";
+  ss << alloc.callstack;
+  eve::abort(ss.str().c_str());
 }
 
-void eve::memory_debugger::track(eve_source_location_args, const void* ptr, bool inplace)
+void eve::memory_debugger::track(const void* ptr, bool inplace)
 {
-  check_initialization();
-
   if (!s_enabled)
     return;
-
+  
   std::lock_guard<std::mutex> lock(s_mutex);
 
   auto it = s_allocations.find(ptr);
   if (it == s_allocations.end())
   {
-    allocation alloc = {function, file, line, ptr, !inplace, 1};
+    allocation alloc = {eve::callstack(true, 1), ptr, !inplace, 1};
     s_allocations.insert(it, std::make_pair(ptr, alloc));
   } else
   {
@@ -169,10 +157,8 @@ void eve::memory_debugger::track(eve_source_location_args, const void* ptr, bool
   }
 }
 
-void eve::memory_debugger::untrack(eve_source_location_args, const void* ptr, bool inplace)
+void eve::memory_debugger::untrack(const void* ptr, bool inplace)
 {
-  check_initialization();
-
   if (!s_enabled)
     return;
 
@@ -211,10 +197,8 @@ void eve::memory_debugger::untrack(eve_source_location_args, const void* ptr, bo
   }
 }
 
-void eve::memory_debugger::transfer(eve_source_location_args, const void* from, const void* to)
+void eve::memory_debugger::transfer(const void* from, const void* to)
 {
-  check_initialization();
-
   if (!s_enabled)
     return;
 
@@ -228,9 +212,7 @@ void eve::memory_debugger::transfer(eve_source_location_args, const void* from, 
     report_error(it->second, from, "Trying to transfer the in-place allocation of a non in-place allocation.");
 
   auto alloc = it->second;
-  alloc.function = function;
-  alloc.file = file;
-  alloc.line = line;
+  alloc.callstack.capture(1);
   alloc.ptr = to;
   s_allocations.erase(it);
   s_allocations.insert(std::make_pair(to, alloc));

@@ -32,12 +32,15 @@
 #include <eve/application.h>
 #include <eve/path.h>
 #include <eve/binary.h>
+#include <eve/callstack.h>
+#include <eve/log.h>
 #include <sstream>
 #include <fstream>
 
 struct Foo
 {
   int value;
+  Foo() : value(0) {}
   Foo(int val) : value(val) { }
   ~Foo() { }
 };
@@ -46,6 +49,17 @@ TEST(Lib, debug)
 {
   eve_assert(2 > 1);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+TEST(Lib, log)
+{
+  eve::log::info("Hello this is an info message.");
+  eve::log::warning("Hello this is a warning message.");
+  eve::log::error("Hello this is an error message.");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TEST(Lib, storage)
 {
@@ -67,9 +81,9 @@ TEST(Lib, storage)
   EXPECT_EQ(32, sizeof(data16));
 
 
-  auto foo = eve::storage::create<Foo>(eve_here, data16, 42);
+  auto foo = new (data16) Foo(42);
   EXPECT_EQ(42, foo->value);
-  eve::destroy(eve_here, foo);
+  eve::destroy(foo);
 
   eve::dyn_storage<1, eve_alignof(Foo)> dynstorage;
 
@@ -81,11 +95,13 @@ TEST(Lib, storage)
     ~Bar() { }
   };
 
-  auto bar = eve::storage::create<Bar>(eve_here, dynstorage, 42);
+  auto bar = new (dynstorage) Bar(42);
   EXPECT_EQ(42, bar->value);
   EXPECT_TRUE(dynstorage.exceeds());
-  eve::destroy(eve_here, bar);
+  eve::destroy(bar);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TEST(Lib, allocator)
 {
@@ -96,8 +112,20 @@ TEST(Lib, allocator)
 
   auto foo = eve_new Foo(33);
   foo->value = 10;
-  eve_delete(foo);
+  eve::global_destroy(foo);
+
+  {
+    auto arr = new(eve::allocator::any(&eve::allocator::global())) int[10];
+    eve::global_destroy_array(arr);
+  }
+
+  {
+    auto arr = new(eve::allocator::any(&eve::allocator::global())) Foo[10];
+    eve::global_destroy_array(arr);
+  }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TEST(Lib, path)
 {
@@ -112,6 +140,8 @@ TEST(Lib, path)
   EXPECT_EQ("file2.txt", filename);
   EXPECT_EQ("C:/Foo", path);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TEST(Lib, binary)
 {
@@ -131,4 +161,24 @@ TEST(Lib, binary)
 
   EXPECT_FLOAT_EQ(3.14f, f);
   EXPECT_EQ("hello", str);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+eve::callstack* foo()
+{
+  return eve_new eve::callstack;
+}
+
+TEST(Lib, callstack)
+{
+  eve::application app(eve::application::module::memory_debugger);
+
+  auto pcs = eve::unique_ptr<eve::callstack>::type(foo());
+  
+  for (eve::size i = 0; i < pcs->size(); ++i)
+  {
+    auto symbol = pcs->fetch(i);
+    std::cout << i << ") " << symbol.function() << " " << symbol.file() << ": " << symbol.line() << '\n';
+  }
 }

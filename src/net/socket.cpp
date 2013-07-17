@@ -42,6 +42,8 @@ inline int sys_shutdown(SOCKET s, int how) { return shutdown(s, how); }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+namespace eve {
+
 static WSADATA s_WSAdata;
 
 void initialize_net()
@@ -54,36 +56,38 @@ void terminate_net()
   WSACleanup();
 }
 
+} // eve
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 eve::socket::address::address(domain domain)
 {
-  m_pimpl.construct<sockaddr_in>(eve_here);
+  m_pimpl.construct<sockaddr_in>();
   initialize(domain); 
 }
 
 eve::socket::address::address(int port, domain domain)
 {
-  m_pimpl.construct<sockaddr_in>(eve_here);
+  m_pimpl.construct<sockaddr_in>();
   set(port, domain);
 }
 
 eve::socket::address::address(const std::string& hostname, int port, domain domain)
 {
-  m_pimpl.construct<sockaddr_in>(eve_here);
+  m_pimpl.construct<sockaddr_in>();
   set(hostname, port, domain);
 }
 
 eve::socket::address::address(const address& rhs)
 {
   m_domain = rhs.m_domain;
-  m_pimpl.construct<sockaddr_in>(eve_here);
+  m_pimpl.construct<sockaddr_in>();
   memcpy(&m_pimpl, rhs.m_pimpl, sizeof(sockaddr_in));
 }
 
 eve::socket::address::~address()
 {
-  eve::destroy<sockaddr_in>(eve_here, &m_pimpl.as<sockaddr_in>());
+  eve::destroy<sockaddr_in>(&m_pimpl.as<sockaddr_in>());
 }
 
 void eve::socket::address::set(int port, domain domain)

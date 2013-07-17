@@ -56,7 +56,7 @@ public:
     auto it = m_states.find(stateID);
     if (it != m_states.end())
       throw std::runtime_error("State with ID " + std::to_string(stateID) + " already created.");
-    it = m_states.insert(it, std::make_pair(eve::type_id<State>(), new State(this)));
+    it = m_states.insert(it, std::make_pair(eve::type_id<State>(), eve_new State(this)));
   }
 
   template <typename State, typename... Args>

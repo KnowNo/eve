@@ -25,38 +25,30 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/net/socket.h>
-#include <eve/net/buffer.h>
-#include <eve/binary.h>
+#pragma once
 
-TEST(Net, SocketAndBuffer)
+#include <string>
+
+namespace eve {
+
+/** Provides means to report messages and errors. */
+class log
 {
-  eve::application app(eve::application::module::networking | eve::application::module::memory_debugger);
+public:
+  /** Redirects the log to file at @p filename. Set this to "" to log on the terminal (default). */
+  static void file(const std::string& filename);
 
-  eve::socket server(eve::socket::type::stream);
-  server.listen(10000, 4);
+  /** Shows an informative message on the log. */
+  static void info(const std::string& message);
 
-  eve::socket client(eve::socket::type::stream);
-  client.connect(eve::socket::address("localhost", 10000));
+  /** Shows an informative message about an unusual or potentially incorrect behaviour of the application. */
+  static void warning(const std::string& message);
 
-  auto peer = server.accept();
+  /** Shows an message about an invalid behaviour of the application. */
+  static void error(const std::string& message);
 
-  {
-    eve::net::buffer buf(&peer, 2);
-    eve::binarywriter bw(&buf);
-    bw << (unsigned char)1 << "hello foo";
-  }
+  /** Shows a fatal error and closes the application. */
+  static void fatal(const std::string& message);
+};
 
-  unsigned char ch;
-  std::string data;
-
-  {
-    eve::net::buffer buf(&client, 2);
-    eve::binaryreader br(&buf);
-    br >> ch >> data;
-  }
-
-  EXPECT_EQ("hello foo", data);
-}
+} // eve

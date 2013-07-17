@@ -25,38 +25,54 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/net/socket.h>
-#include <eve/net/buffer.h>
-#include <eve/binary.h>
+#include "eve/log.h"
+#include "eve/debug.h"
+#include <iostream>
+#include <fstream>
+#include <mutex>
 
-TEST(Net, SocketAndBuffer)
+using namespace eve;
+
+static std::string s_filename;
+static std::ofstream s_file;
+static std::ostream* s_output = &std::cout;
+static std::mutex s_mutex;
+
+void log::file(const std::string& filename)
 {
-  eve::application app(eve::application::module::networking | eve::application::module::memory_debugger);
-
-  eve::socket server(eve::socket::type::stream);
-  server.listen(10000, 4);
-
-  eve::socket client(eve::socket::type::stream);
-  client.connect(eve::socket::address("localhost", 10000));
-
-  auto peer = server.accept();
-
+  if (filename.empty())
   {
-    eve::net::buffer buf(&peer, 2);
-    eve::binarywriter bw(&buf);
-    bw << (unsigned char)1 << "hello foo";
-  }
-
-  unsigned char ch;
-  std::string data;
-
+    s_file.close();
+    s_output = &std::cout;
+  } else
   {
-    eve::net::buffer buf(&client, 2);
-    eve::binaryreader br(&buf);
-    br >> ch >> data;
+    s_file.open(filename.c_str());
+    s_output = &s_file;
   }
+}
 
-  EXPECT_EQ("hello foo", data);
+void log::info(const std::string& message)
+{
+  std::lock_guard<std::mutex> lock(s_mutex);
+  *s_output << "[i] " << message << std::endl;
+}
+
+void log::warning(const std::string& message)
+{
+  std::lock_guard<std::mutex> lock(s_mutex);
+  *s_output << "[!] " << message << std::endl;
+}
+
+void log::error(const std::string& message)
+{
+  std::lock_guard<std::mutex> lock(s_mutex);
+  eve::show_error(message.c_str());
+  *s_output << "[X] " << message << std::endl;
+}
+
+void log::fatal(const std::string& message)
+{
+  std::lock_guard<std::mutex> lock(s_mutex);
+  *s_output << "[FATAL] " << message << std::endl;
+  eve::abort(message.c_str());
 }

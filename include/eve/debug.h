@@ -62,7 +62,7 @@ namespace eve
 /** Shows a fatal error message. */
 void show_error(const char* message);
 
-/** Shows a fatal error message and aborts execution. */
+/** Shows a fatal error message and aborts execution after breaking. */
 void abort(const char* message);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,21 +74,12 @@ void abort(const char* message);
 #  define __eve_debug_empty_func {}
 #endif // EVE_RELEASE
 
-class memory_error : public std::logic_error
-{
-public:
-  memory_error(const void* ptr, const std::string& error) throw();
-  const void* ptr() const { return m_ptr; }
-private:
-  const void* m_ptr;
-};
-
 class memory_debugger
 {
 public:
-  static void track(eve_source_location_args, const void* ptr, bool inplace) __eve_debug_empty_func
-  static void untrack(eve_source_location_args, const void* ptr, bool inplace) __eve_debug_empty_func
-  static void transfer(eve_source_location_args, const void* from, const void* to) __eve_debug_empty_func
+  static void track(const void* ptr, bool inplace) __eve_debug_empty_func
+  static void untrack(const void* ptr, bool inplace) __eve_debug_empty_func
+  static void transfer(const void* from, const void* to) __eve_debug_empty_func
 };
 
 } // eve

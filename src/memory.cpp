@@ -27,14 +27,39 @@
 
 #include "eve/memory.h"
 
-void* operator new(size_t size, eve_source_location_args)
+void* operator new(size_t size, eve::allocator::any allocator)
 {
   if (size == 0)
     size = 1;
-  return eve::allocator::global().allocate(eve_forward_source_location_args, size, 8U);
+  return allocator.allocate(eve::size(size), 8U);
 }
 
-void operator delete(void* ptr, eve_source_location_args)
+void operator delete(void* ptr, eve::allocator::any allocator)
 {
-  eve::allocator::global().deallocate(eve_forward_source_location_args, ptr);
+  allocator.deallocate(ptr);
+}
+
+
+void* operator new(size_t size, eve::detail::place place) throw()
+{
+  eve::memory_debugger::track(place.address, true);
+  return place.address;
+}
+
+void operator delete(void* ptr, eve::detail::place place) throw()
+{
+  eve::memory_debugger::untrack(place.address, true);
+}
+
+
+void* operator new[](size_t size, eve::allocator::any allocator)
+{
+  if (size == 0)
+    size = 1;
+  return allocator.allocate(eve::size(size), 8U);
+}
+
+void operator delete[](void* ptr, eve::allocator::any allocator)
+{
+  allocator.deallocate(ptr);
 }

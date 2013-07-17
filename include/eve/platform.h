@@ -31,6 +31,15 @@
   * @{
   */
 
+//// Empty symbols used only for clarity in code ////
+/** Argument is only read. */
+#define eve_in
+/** Argument is only written. */
+#define eve_out
+/** Argument is both read and written. */
+#define eve_inout
+
+
 #ifdef _MSC_VER
 #  define eve_aligned(_align) __declspec(align(_align))
 #  define eve_alignof(...) __alignof(__VA_ARGS__)
@@ -39,13 +48,15 @@
 #  define eve_alignof(...) __alignof(__VA_ARGS__)
 #endif
 
+
 #ifdef EVE_32
 #  define eve_sizeof(...) sizeof(__VA_ARGS__)
 #else
 #  define eve_sizeof(...) (eve::uint32)(sizeof(__VA_ARGS__))
 #endif
 
-//// Forced inlining
+
+//// Forced inlining ////
 #if (defined(_MSC_VER))
 #  define eve_inline __forceinline
 #elif (defined(__GNUC__))
@@ -80,14 +91,21 @@ typedef uint64 uintptr;
 
 static const size size_msb = 1 << 31;
 
+//// Arithmetic Types ////
+
 /** A convenient enum of all primitive types. */
 enum class arithmetic_type
 {
   CHAR, UCHAR, SHORT, USHORT, INT, UINT, LONGLONG, ULONGLONG, FLOAT, DOUBLE
 };
 
+/** Returns the size of @p type arithmetic type. */
 size arithmetic_type_size(arithmetic_type type);
 
+
+//// Utils
+
+/** Returns a unique unsigned integer value each time it is called. */
 size unique_id();
 
 } // eve

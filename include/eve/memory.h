@@ -28,6 +28,7 @@
 #pragma once
 
 #include "allocator.h"
+#include "allocators/any.h"
 #include "debug.h"
 #include "platform.h"
 #include "uncopyable.h"
@@ -37,6 +38,9 @@
   * @{
   */
 
+#define eve_new new(eve::allocator::any(&eve::allocator::global()))
+#define eve_inplace_new(ptr) new(eve::detail::place(ptr))
+
 namespace eve {
 
 /** Allocates memory using specified allocator on construction and deallocates it on destruction.
@@ -45,15 +49,15 @@ template <class Allocator>
 class unique_alloc : uncopyable
 {
 public:
-  unique_alloc(eve_source_location_args, Allocator& alloc, eve::size size, eve::size align)
+  unique_alloc(Allocator& alloc, eve::size size, eve::size align)
     : m_allocator(alloc)
   {
-    m_ptr = alloc.allocate(eve_forward_source_location_args, size, align);
+    m_ptr = alloc.allocate(size, align);
   }
   ~unique_alloc()
   {
     if (m_ptr)
-      m_allocator.deallocate(eve_here, m_ptr);
+      m_allocator.deallocate(m_ptr);
   }
   void* release() throw()
   {
@@ -70,38 +74,66 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <typename T, typename Allocator, typename... Args>
-T* create(eve_source_location_args, Allocator& allocator, Args&&... args)
-{
-  eve::unique_alloc<Allocator> alloc(eve_forward_source_location_args, allocator, eve_sizeof(T), eve_alignof(T));
-  auto object = new (alloc) T(std::forward<Args>(args)...);
-  alloc.release();
-  return object;
-}
-
-/** In-place create object T using @p args in preallocated memory pointed by @p ptr. */
-template <typename T, typename... Args>
-T* create(eve_source_location_args, void* ptr, Args&&... args)
-{
-  new (ptr) T(std::forward<Args>(args)...);
-  eve::memory_debugger::track(eve_forward_source_location_args, ptr, true);
-  return static_cast<T*>(ptr);
-}
-
 template <typename T, typename Allocator>
-void destroy(eve_source_location_args, Allocator& allocator, const T* object)
+void destroy(Allocator& allocator, const T* object)
 {
   object->~T();
-  allocator::global().deallocate(eve_forward_source_location_args, object);
+  allocator.deallocate(object);
 }
+
+template <typename T>
+void global_destroy(const T* object)
+{
+  destroy(eve::allocator::global(), object);
+} 
 
 /** Destroyes @p object in place (without deallocating any memory). 
     @note to be valid, object must have been created in-place. */
 template <typename T>
-void destroy(eve_source_location_args, const T* object)
+void destroy(const T* object)
 {
-  eve::memory_debugger::untrack(eve_forward_source_location_args, object, true);
+  eve::memory_debugger::untrack(object, true);
   object->~T();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template <typename T, typename Allocator>
+void destroy_array(Allocator& allocator, const T* array)
+{
+  if (std::has_trivial_destructor<T>::value)
+  {
+    allocator.deallocate(array);
+  } else
+  {
+    auto ptr = reinterpret_cast<const uint32*>(array) - 1;
+    for (uint32 i = 0; i < *ptr; ++i)
+      array[i].~T();
+    allocator.deallocate(ptr);
+  }
+}
+
+template <typename T>
+void global_destroy_array(const T* array)
+{
+  destroy_array(eve::allocator::global(), array);
+} 
+
+/** Destroyes @p object in place (without deallocating any memory). 
+    @note to be valid, object must have been created in-place. */
+template <typename T>
+void destroy_array(const T* array)
+{
+  if (std::has_trivial_destructor<T>::value)
+  {
+    eve::memory_debugger::untrack(array, true);
+  } else
+  {
+    auto ptr = reinterpret_cast<const uint32*>(array) - 1;
+    for (uint32 i = 0; i < *ptr; ++i)
+      array[i].~T();
+    eve::memory_debugger::untrack(ptr, true);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,30 +143,44 @@ struct global_deleter
 {
   void operator()(T* ptr) const
   {
-    destroy(eve_here, allocator::global(), ptr);
+    destroy(allocator::global(), ptr);
   }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO move this to some other header file
-template<class T>
+template <typename T>
 struct unique_ptr
 {
-  // This is because damn Visual Studio does not support C++11 aliases.
   typedef std::unique_ptr<T, global_deleter<T>> type;
 };
 
 template<class T, typename... Args>
 typename unique_ptr<T>::type make_unique(Args&&... args)
 {
-  return typename unique_ptr<T>::type(new T(std::forward<Args>(args)...));
+  return typename unique_ptr<T>::type(eve_new T(std::forward<Args>(args)...));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// TODO move this into detail/memory.h
+namespace detail {
+
+  struct place
+  {
+    void* address;
+    explicit place(void* address) : address(address) { }
+  };
+
 }
 
 } // eve
 
-void* operator new(size_t size, eve_source_location_args);
-void operator delete(void* ptr, eve_source_location_args);
+void* operator new(size_t size, eve::allocator::any allocator);
+void operator delete(void* ptr, eve::allocator::any allocator);
 
-#define eve_new new(eve_here)
-#define eve_delete(ptr) eve::destroy(eve_here, eve::allocator::global(), ptr)
+void* operator new(size_t size, eve::detail::place place);
+void operator delete(void* ptr, eve::detail::place place);
+
+void* operator new[](size_t size, eve::allocator::any allocator);
+void operator delete[](void* ptr, eve::allocator::any allocator);

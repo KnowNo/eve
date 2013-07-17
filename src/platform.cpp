@@ -26,6 +26,7 @@
 \******************************************************************************/
 
 #include "eve/platform.h"
+#include "eve/exceptions.h"
 #include <atomic>
 
 eve::size eve::arithmetic_type_size(arithmetic_type type)
@@ -47,3 +48,36 @@ eve::id eve::unique_id()
 {
   return ++s_counter;
 }
+
+static bool s_initialized = false;
+
+#ifdef _MSC_VER
+
+#include <Windows.h>
+#include <Dbghelp.h>
+
+static eve::uint32 s_process_handle;
+
+namespace eve
+{
+  void initialize_platform()
+  {
+  #ifndef EVE_RELEASE
+    HANDLE process = GetCurrentProcess();
+
+    SymSetOptions(SYMOPT_LOAD_LINES);
+
+    // initialize process symbols
+    if (!SymInitialize(process, NULL, TRUE))
+    {
+      int err = GetLastError();
+      eve::system_error("Could not load process symbols.", err);
+    }
+  #endif
+    s_initialized = true;
+  }
+}
+
+#else
+#error Implement platform specific functions.
+#endif

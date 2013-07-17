@@ -38,7 +38,7 @@
 using namespace eve;
 using namespace eve::allocator;
 
-void* heap::allocate(eve_source_location_args, size_t size, uint8 align)
+void* heap::allocate(size_t size, uint8 align)
 {
   eve_assert(size > 0 && align > 0);
 #ifdef EVE_WINDOWS
@@ -46,13 +46,13 @@ void* heap::allocate(eve_source_location_args, size_t size, uint8 align)
 #else
   auto ptr = aligned_alloc(align, size);
 #endif
-  eve::memory_debugger::track(eve_forward_source_location_args, ptr, false);
+  eve::memory_debugger::track(ptr, false);
   return ptr;
 }
 
-void heap::deallocate(eve_source_location_args, const void* ptr)
+void heap::deallocate(const void* ptr)
 {
-  eve::memory_debugger::untrack(eve_forward_source_location_args, ptr, false);
+  eve::memory_debugger::untrack(ptr, false);
 #ifdef EVE_WINDOWS
   _aligned_free(const_cast<void*>(ptr));
 #else
