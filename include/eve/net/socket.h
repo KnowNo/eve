@@ -122,7 +122,7 @@ public:
       @param backlog is the maximum number of pending connections waiting to be accepted.
       @note On error or timeout it throws a socket_error. */
   void listen(eve::uint32 port, eve::size backlog);
-  
+
   /** Blocks until a new socket connects.
       @note On error or timeout it throws a socket_error. */
   socket accept();

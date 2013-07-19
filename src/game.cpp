@@ -31,14 +31,18 @@
 
 using namespace eve;
 
-game::game(eve::flagset<application::module> modules)
+game::game(const std::string& name, eve::flagset<application::module> modules)
   : m_app(modules)
   , m_top(nullptr)
 {
+  m_window.title(name);
 }
 
 game::~game()
 {
+  for (auto& state : m_states)
+    eve::global_destroy(state.second);
+  m_states.clear();
 }
 
 void game::initialize()
@@ -100,9 +104,3 @@ void game::transit(state* state)
   m_top->on_activated();
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-game::state::state(eve::game* game)
-  : m_game(game)
-{
-}

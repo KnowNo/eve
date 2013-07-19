@@ -43,20 +43,23 @@ public:
   struct time;
   class state;
 
-  game(eve::flagset<application::module> modules = application::module::graphics | application::module::memory_debugger);
+  game(const std::string& name, eve::flagset<application::module> modules = application::module::graphics | application::module::memory_debugger);
   ~game();
 
   eve::window& window() { return m_window; }
   const eve::window& window() const { return m_window; }
 
   template <typename State, typename... Args>
-  void create_state(Args&&... args)
+  void create_state(const Args&... args)
   {
     const auto stateID = eve::type_id<State>();
     auto it = m_states.find(stateID);
     if (it != m_states.end())
       throw std::runtime_error("State with ID " + std::to_string(stateID) + " already created.");
-    it = m_states.insert(it, std::make_pair(eve::type_id<State>(), eve_new State(this)));
+    
+    auto state = eve_new State(args...);
+    state->m_game = this;
+    it = m_states.insert(it, std::make_pair(eve::type_id<State>(), state));
   }
 
   template <typename State, typename... Args>
@@ -114,7 +117,7 @@ public:
   virtual void on_deactivated() {}
   
 protected:
-  state(game* game);
+  state() {}
   game* game() const { return m_game; }
 
 private:

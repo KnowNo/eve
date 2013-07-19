@@ -45,15 +45,18 @@ inline int sys_shutdown(SOCKET s, int how) { return shutdown(s, how); }
 namespace eve {
 
 static WSADATA s_WSAdata;
+static bool s_net_initialised = false;
 
 void initialize_net()
 {
   WSAStartup(MAKEWORD(2, 0), &s_WSAdata);
+  s_net_initialised = true;
 }
 
 void terminate_net()
 {
   WSACleanup();
+  s_net_initialised = false;
 }
 
 } // eve
@@ -167,6 +170,9 @@ eve::socket::~socket()
 
 void eve::socket::create(type type, domain domain)
 {
+  if (!s_net_initialised)
+    throw socket_error("Networking module not initialised.");
+
   if (m_pimpl.as<SOCKET>() != 0)
     throw socket_error("Socket already created.");
 
