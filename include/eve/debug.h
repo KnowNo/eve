@@ -50,7 +50,7 @@
 
 #endif
 
-#define eve_internal_error eve::abort(("Internal error " eve_str_source_location "."))
+#define eve_internal_error eve::abort("Internal error at " eve_str_source_location ".")
 
 /** \addtogroup Lib
   * @{

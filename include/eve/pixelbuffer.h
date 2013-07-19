@@ -25,50 +25,50 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <eve/application.h>
-#include <eve/serialization/vector.h>
-#include <eve/serialization.h>
+#pragma once
 
-struct Boo
-{
-  int j;
-  Boo() { }
-  Boo(int j) : j(j) {}
-  eve_serializable(Boo, j)
-};
+#include "math.h"
+#include "resource.h"
 
-struct Foo
-{
-  int i;
-  float f;
-  double d;
-  std::vector<Boo> boos;
-  eve_serializable(Foo, i, f, d, boos)
-};
-
-TEST(Lib, serialization)
-{
-  eve::application app(eve::application::module::memory_debugger);
-
-  Foo foo;
-  foo.i = 42;
-  foo.f = 3.14f;
-  foo.d = 1.41;
-  foo.boos.emplace_back(11);
+/**
+ * \addtogroup Graphics
+ * @{
+ */
   
-  std::stringstream ss;
-  eve::serialize_as_text(foo, ss);
+namespace eve
+{
 
-  foo.i = 0;
-  foo.f = 0;
-  foo.d = 0;
-  foo.boos.clear();
+class pixelbuffer : public resource
+{
+public:
+  pixelbuffer();
+  ~pixelbuffer();
+ 
+  const char* data() const { return m_data; }
+  const vec2u& size() const { return m_size; }
+  eve::size width() const { return m_size.x; }
+  eve::size height() const { return m_size.y; }
+  float ratio() const { return m_ratio; }
+  uint16 channels() const { return m_channels; }
+  uint16 bits_per_channel() const { return m_bits_per_channel; }
+  uint16 bits_per_pixel() const { return m_bits_per_pixel; }
 
-  eve::deserialize_as_text(ss, foo);
+  void load(std::istream& source) override;
+  void unload();
 
-  EXPECT_EQ(42, foo.i);
-  EXPECT_FLOAT_EQ(3.14f, foo.f);
-  EXPECT_DOUBLE_EQ(1.41, foo.d);
-  EXPECT_EQ(11, foo.boos[0].j);
-}
+private:
+  void on_reload() override;
+  bool validatePNG(std::istream& source);
+  bool loadPNG(std::istream& source);
+
+  char* m_data;
+  vec2u m_size;
+  float m_ratio;
+  uint16 m_channels;
+  uint16 m_bits_per_channel;
+  uint16 m_bits_per_pixel;
+};
+
+} //eve
+
+/** }@ */

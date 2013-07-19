@@ -50,15 +50,17 @@
       };\
       m_fields = eve::range<const eve::detail::field*>(s_fields, s_fields + sizeof(s_fields) / sizeof(eve::detail::field));\
     }\
-  };
+  };\
+  template<typename, bool, bool> friend struct eve::detail::text_serializer_helper;
 
-#define eve_decl_serializable\
+#define eve_declare_serializable\
   struct serialization_info : public eve::detail::serialization_info_base\
   {\
     serialization_info();\
-  };
+  };\
+  template<typename, bool, bool> friend struct eve::detail::text_serializer_helper;
 
-#define eve_def_serializable(Class, ...)\
+#define eve_define_serializable(Class, ...)\
   Class :: serialization_info::serialization_info() : eve::detail::serialization_info_base(#Class)\
   {\
     typedef Class serialized_class;\
@@ -67,7 +69,53 @@
       eve_pp_map(_eve_field, __VA_ARGS__)\
     };\
     m_fields = eve::range<const eve::detail::field*>(s_fields, s_fields + sizeof(s_fields) / sizeof(eve::detail::field));\
-  }
+  };
+
+
+  #define __eve_field_named(f, n) eve::detail::field(n, & serialized_class :: f),
+  #define _eve_field_named(pair) __eve_field_named pair
+
+#define eve_serializable_named(Class, ...)\
+  struct serialization_info : public eve::detail::serialization_info_base\
+  {\
+    typedef Class serialized_class;\
+    serialization_info() : eve::detail::serialization_info_base(#Class)\
+    {\
+      static const eve::detail::field s_fields[] =\
+      {\
+        eve_pp_map(_eve_field_named, __VA_ARGS__)\
+      };\
+      m_fields = eve::range<const eve::detail::field*>(s_fields, s_fields + sizeof(s_fields) / sizeof(eve::detail::field));\
+    }\
+  };
+
+#define eve_define_serializable_named(Class, ...)\
+  Class :: serialization_info::serialization_info() : eve::detail::serialization_info_base(#Class)\
+  {\
+    typedef Class serialized_class;\
+    static const eve::detail::field s_fields[] =\
+    {\
+      eve_pp_map(_eve_field_named, __VA_ARGS__)\
+    };\
+    m_fields = eve::range<const eve::detail::field*>(s_fields, s_fields + sizeof(s_fields) / sizeof(eve::detail::field));\
+  };
+
+
+#define __eve_enum_value(Enum, value) {unsigned( Enum :: value), #value },
+
+#define eve_define_enum(Enum, ...)\
+  namespace eve { namespace detail {\
+    template <>\
+    struct enum_info < Enum >\
+    {\
+      static const char* name;\
+      static const enum_value values[];\
+    };\
+    const char* enum_info < Enum >::name = #Enum;\
+    const enum_value detail::enum_info < Enum >::values[] = {\
+      eve_pp_map_arg(__eve_enum_value, Enum, __VA_ARGS__) {0, nullptr}\
+    };\
+  }}
 
 namespace eve {
 

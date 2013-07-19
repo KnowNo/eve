@@ -37,7 +37,7 @@
 
 using namespace eve;
 
-eve_def_serializable(window::config, width, height, bpp, depth_bits, stencil_bits,
+eve_define_serializable(window::config, width, height, bpp, depth_bits, stencil_bits,
                      fsaa, fullscreen, resizable, vsync)
 
 std::string window::config::path = "window.txt";
