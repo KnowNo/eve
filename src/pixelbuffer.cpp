@@ -49,9 +49,9 @@ pixelbuffer::~pixelbuffer()
 
 void pixelbuffer::load(std::istream& source)
 {
-  if (validatePNG(source))
-    loadPNG(source);
-  throw eve::system_error("Image is not a valid PNG.");
+  if (!validatePNG(source))
+    throw eve::system_error("Image is not a valid PNG.");
+  loadPNG(source);
 }
 
 void pixelbuffer::unload()
@@ -71,16 +71,15 @@ bool pixelbuffer::validatePNG(std::istream& source)
 {
   //Allocate a buffer of 8 bytes, where we can put the file signature.
   png_byte pngsig[PNGSIGSIZE];
-  int is_png = 0;
 
   //Read the 8 bytes from the stream into the sig buffer.
   source.read((char*)pngsig, PNGSIGSIZE);
 
   //Check if the read worked...
-  if (!source.good()) return false;
+  if (!source) return false;
 
   //Let LibPNG check the sig. If this function returns 0, everything is OK.
-  is_png = png_sig_cmp(pngsig, 0, PNGSIGSIZE);
+  int is_png = png_sig_cmp(pngsig, 0, PNGSIGSIZE);
   return (is_png == 0);
 }
 

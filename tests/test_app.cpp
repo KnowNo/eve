@@ -32,6 +32,7 @@
 #include <eve/hwbuffer.h>
 #include <eve/vertexarray.h>
 #include <eve/time.h>
+#include <eve/texture.h>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -99,14 +100,14 @@ TEST(Application, window)
     eve::vec2(0.f, 1.0f)
   };
 
-  buff.create(eve::hwbuffer::usage::STATIC_DRAW, eve_sizeof(triangle), triangle);
+  glEnableClientState(GL_VERTEX_ARRAY);
   
-  eve::hwarray::vertices<eve::vec2> vertices(&buff);
+  eve::resource::ptr<eve::texture> tex;
 
-  eve::vertexarray va;
+  tex.load("data/ball.evedat");
+  tex->bind(0);
+  glEnable(GL_TEXTURE_2D);
 
-  va.attach(0, &vertices);
-  
   eve::window::event e;
   eve::stopwatch sw;
   eve::fpscounter fps;
@@ -122,7 +123,22 @@ TEST(Application, window)
     glViewport(0, 0, window.width(), window.height());
 
     glColor3f(1,1,1);
-    va.draw(eve::primitive_type::TRIANGLES, 0, 3);
+    //glVertexPointer(2, GL_FLOAT, sizeof (float) * 2, triangle);
+    //glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glBegin(GL_QUADS);
+
+      glTexCoord2f(0, 0);
+      glVertex2f(0, 0);
+      glTexCoord2f(1, 0);
+      glVertex2f(1, 0);
+      glTexCoord2f(1, 1);
+      glVertex2f(1, 1);
+      glTexCoord2f(0, 1);
+      glVertex2f(0, 1);
+
+    glEnd();
+
 
     eve::time::fps_wait((float)sw.elapsed(), 60);
     if (fps.tick())

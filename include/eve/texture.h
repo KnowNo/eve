@@ -46,46 +46,46 @@ class texture : public eve::resource
 public:
   typedef enum class type
   {
-    TEX_2D,
-    TEX_3D,
-    RECTANGLE,
-    ARRAY_2D,
-    BUFFER
+    tex2D,
+    tex3D,
+    rectangle,
+    array2D,
+    buffer
   } type_t;
 
   typedef enum class typeformat
   {
-    UNSIGNED_BYTE,
-    HALF_FLOAT,
-    FLOAT,
+    unsigned_byte,
+    half_float,
+    full_float,
   } typeformat_t;
 
   typedef enum class channels
   {
-    MONO,
-    DUAL,
-    TRIPLE,
-    QUAD
+    mono,
+    dual,
+    triple,
+    quad
   } channels_t;
 
   typedef enum class filtermode
   {
-    NEAREST,
-    LINEAR
+    nearest,
+    linear
   } filtermode_t;
 
   typedef enum class wrapmode
   {
-    REPEAT,
-    CLAMP_TO_EDGE,
-    CLAMP_TO_BORDER
+    repeat,
+    clamp_to_edge,
+    clamp_to_border
   } wrapmode_t;
 
   static void unbind(type_t type);
 
   texture();
   texture(typeformat format, channels channels);
-  texture(const vec2u& size, unsigned depth, type type, typeformat format, channels channels, filtermode filtermode = filtermode::LINEAR, wrapmode wrapmode = wrapmode::CLAMP_TO_EDGE, bool mipmap = false);
+  texture(const vec2u& size, unsigned depth, type type, typeformat format, channels channels, filtermode filtermode = filtermode::linear, wrapmode wrapmode = wrapmode::clamp_to_edge, bool mipmap = false);
   ~texture();
 
   type_t type() const { return m_type; }
@@ -105,7 +105,7 @@ public:
 
   void write_layer(unsigned layer, const void* data);
 
-  void activate(unsigned unit = 0) const; /* API specific */
+  void bind(unsigned unit = 0) const; /* API specific */
   void destroy();
 
   //vec4 transform_coordinate(const vec2i& coordinate, const vec2i& size) const;

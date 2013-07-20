@@ -38,24 +38,24 @@ struct Boo
   eve_serializable(Boo, j)
 };
 
-struct Foo
+struct Fooo
 {
   int i;
   float f;
   double d;
   std::vector<Boo> boos;
-  eve_serializable(Foo, i, f, d, boos)
+  eve_serializable(Fooo, i, f, d, boos)
 };
 
 TEST(Lib, serialization)
 {
   eve::application app(eve::application::module::memory_debugger);
 
-  Foo foo;
+  Fooo foo;
   foo.i = 42;
   foo.f = 3.14f;
   foo.d = 1.41;
-  foo.boos.emplace_back(11);
+  foo.boos.push_back(Boo(11));
   
   std::stringstream ss;
   eve::serialize_as_text(foo, ss);

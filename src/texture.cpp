@@ -32,23 +32,23 @@
 using namespace eve;
 
 eve_define_enum(eve::texture::type_t,
-  TEX_2D, TEX_3D, RECTANGLE, ARRAY_2D, BUFFER
+  tex2D, tex3D, rectangle, array2D, buffer
 )
 
 eve_define_enum(eve::texture::typeformat_t,
-  UNSIGNED_BYTE, HALF_FLOAT, FLOAT
+  unsigned_byte, half_float, full_float
 )
 
 eve_define_enum(eve::texture::channels_t,
-  MONO, DUAL, TRIPLE, QUAD
+  mono, dual, triple, quad
 )
 
 eve_define_enum(eve::texture::filtermode_t,
-  NEAREST, LINEAR
+  nearest, linear
 )
 
 eve_define_enum(eve::texture::wrapmode_t,
-  REPEAT, CLAMP_TO_EDGE, CLAMP_TO_BORDER
+  repeat, clamp_to_edge, clamp_to_border
 )
 
 eve_define_serializable_named(eve::texture,
@@ -63,11 +63,11 @@ eve_define_serializable_named(eve::texture,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 texture::texture()
-  : m_type(type_t::TEX_2D)
-  , m_typeformat(typeformat_t::UNSIGNED_BYTE)
-  , m_channels(channels_t::TRIPLE)
-  , m_filtermode(filtermode_t::LINEAR)
-  , m_wrapmode(wrapmode_t::CLAMP_TO_EDGE)
+  : m_type(type_t::tex2D)
+  , m_typeformat(typeformat_t::unsigned_byte)
+  , m_channels(channels_t::triple)
+  , m_filtermode(filtermode_t::linear)
+  , m_wrapmode(wrapmode_t::clamp_to_edge)
   , m_mipmapped(false)
   , m_pixelbuffer((eve::resource_host*)this)
 {
@@ -75,11 +75,11 @@ texture::texture()
 }
 
 texture::texture(typeformat_t format, channels_t channels)
-  : m_type(type_t::TEX_2D)
+  : m_type(type_t::tex2D)
   , m_typeformat(format)
   , m_channels(channels)
-  , m_filtermode(filtermode_t::LINEAR)
-  , m_wrapmode(wrapmode_t::CLAMP_TO_EDGE)
+  , m_filtermode(filtermode_t::linear)
+  , m_wrapmode(wrapmode_t::clamp_to_edge)
   , m_mipmapped(false)
   , m_pixelbuffer((eve::resource_host*)this)
 {
@@ -101,7 +101,7 @@ texture::~texture()
 void texture::create(type_t type, const vec2u& size, unsigned depth, typeformat_t format, channels_t channels, filtermode_t filtermode, wrapmode_t wrapMode, bool mipmap, const void* data)
 {
   setup(type, size, depth, format, channels, filtermode, wrapMode, mipmap);
-  activate();
+  bind();
   write(data);
   set_filters();
   set_clampmode();
@@ -119,13 +119,13 @@ void texture::create(type_t type, const vec2u& size, unsigned depth, typeformat_
 
 void texture::create(type_t type, const pixelbuffer& pixelBuffer, filtermode_t filtermode, wrapmode_t wrapMode, bool mipmap)
 {
-  create(type, pixelBuffer.size(), 1, typeformat_t::UNSIGNED_BYTE, channels_t(pixelBuffer.channels() - 1), filtermode, wrapMode, mipmap, pixelBuffer.data());
+  create(type, pixelBuffer.size(), 1, typeformat_t::unsigned_byte, channels_t(pixelBuffer.channels() - 1), filtermode, wrapMode, mipmap, pixelBuffer.data());
 }
 
 
 void texture::write_layer(unsigned layer, const void* data)
 {
-  activate();
+  bind();
   subwrite(layer, data);
 }
 
@@ -149,11 +149,11 @@ struct texture_info
   std::string pixelbuffer;
 
   texture_info()
-    : type(texture::type_t::TEX_2D)
-    , typeformat(texture::typeformat_t::UNSIGNED_BYTE)
-    , channels(texture::channels_t::TRIPLE)
-    , filtermode(texture::filtermode_t::LINEAR)
-    , wrapmode(texture::wrapmode_t::CLAMP_TO_EDGE)
+    : type(texture::type_t::tex2D)
+    , typeformat(texture::typeformat_t::unsigned_byte)
+    , channels(texture::channels_t::triple)
+    , filtermode(texture::filtermode_t::linear)
+    , wrapmode(texture::wrapmode_t::clamp_to_edge)
     , mipmapped(false)
     {
     }
@@ -166,23 +166,23 @@ void texture::load(std::istream& source)
 {
   texture_info info;
   eve::deserialize_as_text(source, info);
-
-  switch (m_type)
+  
+  switch (info.type)
   {
-    case type::TEX_2D:
-    case type::RECTANGLE:
+    case type::tex2D:
+    case type::rectangle:
     {
       std::string path = this->path();
       eve::path::pop(path);
       eve::path::push(path, info.pixelbuffer);
       m_pixelbuffer.load(path);
-      create(m_type, *m_pixelbuffer, info.filtermode, info.wrapmode, info.mipmapped);
+      create(info.type, *m_pixelbuffer, info.filtermode, info.wrapmode, info.mipmapped);
       break;
     }
 
     /* TODO implement this
-    case Texture::Type::TEX_3D:
-    case Texture::Type::ARRAY_2D:
+    case Texture::Type::tex3D:
+    case Texture::Type::array2D:
       if (mLayers.getSize() == 0)
         BI_LOG_ERROR("No layers specified in texture array resource.")
       else

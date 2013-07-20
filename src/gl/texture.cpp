@@ -35,7 +35,7 @@ using namespace eve;
 static const GLint k_gl_type[] = { GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_RECTANGLE, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BUFFER };
 static const GLint k_gl_internal_format[][4] = {
   /* UNSIGNED_BYTE */ {GL_R8, GL_RG8, GL_RGB8, GL_RGBA8},
-  /* HALF_FLOAT */    {GL_R16F, GL_RG16F, GL_RGB16F, GL_RGBA16F},
+  /* half_float */    {GL_R16F, GL_RG16F, GL_RGB16F, GL_RGBA16F},
   /* FLOAT */         {GL_R32F, GL_RG32F, GL_RGB16F, GL_RGBA16F}
 };
 static const GLenum k_gl_pixelformat[] = { GL_RED, GL_RG, GL_RGB, GL_RGBA };
@@ -47,7 +47,7 @@ void texture::unbind(type_t type)
   glBindTexture(k_gl_type[(unsigned)type], 0);
 }
 
-void texture::activate(unsigned unit) const
+void texture::bind(unsigned unit) const
 {
   glActiveTexture(GL_TEXTURE0 + unit);
   glBindTexture(k_gl_type[static_cast<unsigned>(m_type)], m_pimpl.as<GLuint>());
@@ -77,12 +77,12 @@ void texture::create_id()
 void texture::write(const void* data)
 {
   GLenum typeFormat = k_gl_typeformat[static_cast<unsigned>(m_typeformat)];
-  if(!data && (m_typeformat == typeformat::HALF_FLOAT))
+  if(!data && (m_typeformat == typeformat::half_float))
     typeFormat = GL_FLOAT;
   switch (m_type)
   {
-  case type::TEX_2D:
-  case type::RECTANGLE:
+  case type::tex2D:
+  case type::rectangle:
     glTexImage2D(
       k_gl_type[int(m_type)], // target
       0,             // level
@@ -93,8 +93,8 @@ void texture::write(const void* data)
       data);
     break;
 
-  case type::TEX_3D:
-  case type::ARRAY_2D:
+  case type::tex3D:
+  case type::array2D:
     glTexImage3D(
       k_gl_type[int(m_type)], // target
       0,             // level
@@ -116,12 +116,12 @@ void texture::write(const void* data)
 void texture::subwrite(unsigned depth, const void* data)
 {
   GLenum typeFormat = k_gl_typeformat[static_cast<unsigned>(m_typeformat)];
-  if(!data && (m_typeformat == texture::typeformat::HALF_FLOAT))
+  if(!data && (m_typeformat == texture::typeformat::half_float))
     typeFormat = GL_FLOAT;
   switch (m_type)
   {
-  case type::TEX_2D:
-  case type::RECTANGLE:
+  case type::tex2D:
+  case type::rectangle:
     glTexSubImage2D(
       k_gl_type[int(m_type)], // target
       0, 0, 0, // level, xoffset, yoffset
@@ -131,8 +131,8 @@ void texture::subwrite(unsigned depth, const void* data)
       data);
     break;
 
-  case type::TEX_3D:
-  case type::ARRAY_2D:
+  case type::tex3D:
+  case type::array2D:
     glTexSubImage3D(
       k_gl_type[int(m_type)], // target
       0, 0, 0, // level, xoffset, yoffset
@@ -154,15 +154,15 @@ void texture::subwrite(unsigned depth, const void* data)
 void texture::set_filters()
 {
   GLint minFilterID = 0;
-  GLint magFilterID =  m_filtermode == filtermode::NEAREST ? GL_NEAREST : GL_LINEAR;
+  GLint magFilterID =  m_filtermode == filtermode::nearest ? GL_NEAREST : GL_LINEAR;
   if (m_mipmapped)
   {
-    if (m_filtermode == filtermode::NEAREST)
+    if (m_filtermode == filtermode::nearest)
       minFilterID = GL_NEAREST_MIPMAP_NEAREST;
     else
       minFilterID = GL_LINEAR_MIPMAP_LINEAR;
   } else
-    if (m_filtermode == filtermode::NEAREST)
+    if (m_filtermode == filtermode::nearest)
       minFilterID = GL_NEAREST;
     else
       minFilterID = GL_LINEAR;

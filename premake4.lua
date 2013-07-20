@@ -1,13 +1,14 @@
 
 -- Build dependency lists
 local build_deps = function(deps, suffix)
-  table.insert(deps, "glew")
   local d = {}
   for i,v in ipairs(deps) do
     d[i] = v..suffix
   end
   return d
 end
+
+local deps = {"gtest", "gtest_main", "glew", "libpng16", "zlib"}
 
 solution "eve"
   language "C++"
@@ -81,9 +82,9 @@ solution "eve"
       defines { "_VARIADIC_MAX=10" }
 
     configuration "Debug"
-      links (build_deps({"gtest", "gtest_main"}, "d"))
+      links (build_deps(deps, "d"))
     configuration "not Debug"
-      links (build_deps({"gtest", "gtest_main"}, ""))
+      links (build_deps(deps, ""))
 
     configuration "Debug"
       targetname "testsd"

@@ -64,7 +64,7 @@ resource::source::source(const std::string& path)
 
 void resource::source::open(const std::string& path)
 {
-  m_file.open(path.c_str());
+  m_file.open(path.c_str(), std::ios::binary);
   if (!m_file.good())
     throw eve::file_not_found_error(path);
   m_source = &m_file;
@@ -136,6 +136,8 @@ resource* resource::process_new(eve::unique_ptr<resource>::type res)
   try
   {
     resource::source source(res->m_path);
+    if (!(*source).good())
+      throw std::runtime_error("file \"" + res->m_path + "\" not good for reading.");
     res->load(*source);
     res->m_valid = true;
   } catch (std::exception& e)
