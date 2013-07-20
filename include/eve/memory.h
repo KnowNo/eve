@@ -38,7 +38,29 @@
   * @{
   */
 
+/**
+  The eve framework provides a custom allocation mechanism. Builtin "new" and "delete" operators
+  are wrapped by custom functions and should *never* be called manually.
+
+  In order to allocate a new object you can use eve_new() for global heap allocations and
+  eve_inplace_new(address) for in-place allocations.
+
+  A number of destruction functions are provided. Functions called "destroy" destruct the object
+  (i.e. calls its destructor) and dellaocate memory from the global heap while functions called
+  "destruct" only call the destructor without deallocating memory. Always use destruct() for
+  destructing in-place allocated objects.
+*/
+
+/** Use this macro in place of the builtin 'new'.
+    Works with:
+      - Heap allocated objects (e.g. eve_new Foo). Destroy calling eve::destroy(ptr);
+      - Heap allocated arrays (e.g. eve_new Foo[10]). Destroy calling eve::destroy_array(ptr). */
 #define eve_new new(eve::allocator::any(&eve::allocator::global()))
+
+/** Use this macro in place of constructing an object in specified address at @p ptr.
+    Works with:
+      - In-place objects(e.g. eve_inplace_new(address) Foo). Destroy calling eve::destruct(ptr);
+      - In-place arrays (e.g. eve_inplace_new(address) Foo[10]). Destroy calling eve::destruct_array(ptr). */
 #define eve_inplace_new(ptr) new(eve::detail::place(ptr))
 
 namespace eve {
@@ -82,7 +104,7 @@ void destroy(Allocator& allocator, const T* object)
 }
 
 template <typename T>
-void global_destroy(const T* object)
+void destroy(const T* object)
 {
   destroy(eve::allocator::global(), object);
 } 
@@ -90,7 +112,7 @@ void global_destroy(const T* object)
 /** Destroyes @p object in place (without deallocating any memory). 
     @note to be valid, object must have been created in-place. */
 template <typename T>
-void destroy(const T* object)
+void destruct(const T* object)
 {
   eve::memory_debugger::untrack(object, true);
   object->~T();
@@ -114,7 +136,7 @@ void destroy_array(Allocator& allocator, const T* array)
 }
 
 template <typename T>
-void global_destroy_array(const T* array)
+void destroy_array(const T* array)
 {
   destroy_array(eve::allocator::global(), array);
 } 
@@ -122,7 +144,7 @@ void global_destroy_array(const T* array)
 /** Destroyes @p object in place (without deallocating any memory). 
     @note to be valid, object must have been created in-place. */
 template <typename T>
-void destroy_array(const T* array)
+void destruct_array(const T* array)
 {
   if (std::has_trivial_destructor<T>::value)
   {
@@ -143,7 +165,7 @@ struct global_deleter
 {
   void operator()(T* ptr) const
   {
-    destroy(allocator::global(), ptr);
+    destroy(ptr);
   }
 };
 
@@ -161,17 +183,20 @@ typename unique_ptr<T>::type make_unique(Args&&... args)
   return typename unique_ptr<T>::type(eve_new T(std::forward<Args>(args)...));
 }
 
+template<class T, typename... Args>
+typename unique_ptr<T[]>::type make_unique_array(eve::size size)
+{
+  return typename unique_ptr<T[]>::type(eve_new T[size]);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO move this into detail/memory.h
 namespace detail {
-
   struct place
   {
     void* address;
     explicit place(void* address) : address(address) { }
   };
-
 }
 
 } // eve

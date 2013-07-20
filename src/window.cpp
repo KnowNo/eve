@@ -69,7 +69,7 @@ window::window(const std::string& title)
 
 window::~window()
 {
-  eve::destroy(&m_pimpl.as<window_impl>());
+  eve::destruct(&m_pimpl.as<window_impl>());
 }
 
 void window::configure(const config& config)

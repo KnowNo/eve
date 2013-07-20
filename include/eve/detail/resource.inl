@@ -111,7 +111,7 @@ void resource::ptr<T, Param>::reset(T* res)
     if (--m_resource->m_references == 0)
     {
       m_resource->unload();
-      eve::global_destroy(m_resource);
+      eve::destroy(m_resource);
     }
   }
 

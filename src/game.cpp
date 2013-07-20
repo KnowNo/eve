@@ -41,7 +41,7 @@ game::game(const std::string& name, eve::flagset<application::module> modules)
 game::~game()
 {
   for (auto& state : m_states)
-    eve::global_destroy(state.second);
+    eve::destroy(state.second);
   m_states.clear();
 }
 

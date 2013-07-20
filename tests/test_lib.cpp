@@ -81,9 +81,9 @@ TEST(Lib, storage)
   EXPECT_EQ(32, sizeof(data16));
 
 
-  auto foo = new (data16) Foo(42);
+  auto foo = eve_inplace_new(data16) Foo(42);
   EXPECT_EQ(42, foo->value);
-  eve::destroy(foo);
+  eve::destruct(foo);
 
   eve::dyn_storage<1, eve_alignof(Foo)> dynstorage;
 
@@ -95,10 +95,10 @@ TEST(Lib, storage)
     ~Bar() { }
   };
 
-  auto bar = new (dynstorage) Bar(42);
+  auto bar = eve_inplace_new(dynstorage) Bar(42);
   EXPECT_EQ(42, bar->value);
   EXPECT_TRUE(dynstorage.exceeds());
-  eve::destroy(bar);
+  eve::destruct(bar);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,16 +112,16 @@ TEST(Lib, allocator)
 
   auto foo = eve_new Foo(33);
   foo->value = 10;
-  eve::global_destroy(foo);
+  eve::destroy(foo);
 
   {
     auto arr = new(eve::allocator::any(&eve::allocator::global())) int[10];
-    eve::global_destroy_array(arr);
+    eve::destroy_array(arr);
   }
 
   {
     auto arr = new(eve::allocator::any(&eve::allocator::global())) Foo[10];
-    eve::global_destroy_array(arr);
+    eve::destroy_array(arr);
   }
 }
 

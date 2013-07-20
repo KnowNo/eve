@@ -90,7 +90,7 @@ eve::socket::address::address(const address& rhs)
 
 eve::socket::address::~address()
 {
-  eve::destroy<sockaddr_in>(&m_pimpl.as<sockaddr_in>());
+  eve::destruct<sockaddr_in>(&m_pimpl.as<sockaddr_in>());
 }
 
 void eve::socket::address::set(int port, domain domain)

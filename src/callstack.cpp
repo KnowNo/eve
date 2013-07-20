@@ -84,7 +84,7 @@ callstack::symbol callstack::fetch(eve::size index) const
   IMAGEHLP_LINE info;
   info.SizeOfStruct = sizeof(IMAGEHLP_LINE);
   DWORD  dwDisplacement;
-  if (SymGetLineFromAddr(s_process, (DWORD64)(symbolinfo.Address), &dwDisplacement, &info))
+  if (SymGetLineFromAddr(s_process, (eve::uintptr)(symbolinfo.Address), &dwDisplacement, &info))
   {
     symbol.m_file = info.FileName;
     symbol.m_line = info.LineNumber + 1;

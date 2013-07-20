@@ -1,3 +1,4 @@
 {
+  filtermode = nearest
   pixelbuffer = "ball.png"
 }
