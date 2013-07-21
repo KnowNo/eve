@@ -34,6 +34,7 @@
 #include <eve/binary.h>
 #include <eve/callstack.h>
 #include <eve/log.h>
+#include <eve/string.h>
 #include <sstream>
 #include <fstream>
 
@@ -81,7 +82,7 @@ TEST(Lib, storage)
   EXPECT_EQ(32, sizeof(data16));
 
 
-  auto foo = eve_inplace_new(data16) Foo(42);
+  auto foo = eve::storage::create<Foo>(data16, 42);
   EXPECT_EQ(42, foo->value);
   eve::destruct(foo);
 
@@ -95,7 +96,7 @@ TEST(Lib, storage)
     ~Bar() { }
   };
 
-  auto bar = eve_inplace_new(dynstorage) Bar(42);
+  auto bar = eve::storage::create<Bar>(dynstorage, 42);
   EXPECT_EQ(42, bar->value);
   EXPECT_TRUE(dynstorage.exceeds());
   eve::destruct(bar);
@@ -181,4 +182,11 @@ TEST(Lib, callstack)
     auto symbol = pcs->fetch(i);
     std::cout << i << ") " << symbol.function() << " " << symbol.file() << ": " << symbol.line() << '\n';
   }
+}
+
+TEST(Lib, string)
+{
+  eve::string hello = "Hello";
+  eve::string msg = hello + " " + "world";
+  EXPECT_STREQ("Hello world", msg.data());
 }
