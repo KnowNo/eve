@@ -34,7 +34,6 @@
 #include <eve/binary.h>
 #include <eve/callstack.h>
 #include <eve/log.h>
-#include <eve/string.h>
 #include <sstream>
 #include <fstream>
 
@@ -184,9 +183,9 @@ TEST(Lib, callstack)
   }
 }
 
-TEST(Lib, string)
-{
-  eve::string hello = "Hello";
-  eve::string msg = hello + " " + "world";
-  EXPECT_STREQ("Hello world", msg.data());
-}
+//TEST(Lib, string)
+//{
+//  eve::string hello = "Hello";
+//  eve::string msg = hello + " " + "world";
+//  EXPECT_STREQ("Hello world", msg.data());
+//}

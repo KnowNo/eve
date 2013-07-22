@@ -30,7 +30,7 @@
 #include "vertex.h"
 #include "storage.h"
 
-/** \addtogroup Lib
+/** \addtogroup Gfx
   * @{
   */
 

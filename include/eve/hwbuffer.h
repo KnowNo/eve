@@ -30,7 +30,7 @@
 #include "storage.h"
 #include "uncopyable.h"
 
-/** \addtogroup Lib
+/** \addtogroup Gfx
   * @{
   */
 

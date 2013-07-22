@@ -87,7 +87,8 @@ resource::ptr<T, Param>& resource::ptr<T, Param>::operator=(const ptr& rhs)
 {
   m_host = rhs.m_host;
   reset(rhs.m_resource);
-  ++m_resource->m_references;
+  if (m_resource)
+    ++m_resource->m_references;
   return *this;
 }
 

@@ -25,22 +25,22 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#pragma once
+#include <gtest/gtest.h>
+#include <eve/application.h>
+#include <eve/text.h>
 
-#include <string>
+TEST(Lib, text)
+{
+  eve::application app(eve::application::module::memory_debugger);
+  
+  eve::text::ptr text;
+  text.load("data/text.txt");
 
-/** \addtogroup Lib
-  * @{
-  */
+  auto value = text->fetch_define("eggs");
+  EXPECT_EQ("yummy", value);
+  EXPECT_EQ(true, text->is_defined("spam"));
+  EXPECT_EQ(false, text->is_defined("cheese"));
 
-namespace eve {
-namespace path {
-
-void        push(std::string& lhs, const std::string& rhs);
-std::string pop(std::string& path);
-void        pop_push(std::string& lhs, const std::string& rhs);
-
-} // path
-} // eve
-
-/** @} */
+  auto result = text->translate(4);
+  std::cout << result;
+}

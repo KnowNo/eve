@@ -1,0 +1,10 @@
+This is a piece of text with an
+
+#eve_include "included.txt"
+
+text.
+
+#eve_define eggs yummy
+#eve_define spam
+
+Hello :D
