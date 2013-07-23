@@ -45,6 +45,8 @@
 
 #else
 
+#define eve_str_source_location ""
+
 #define eve_assert(condition) {}
 #define eve_debug_code(...)
 
@@ -56,8 +58,7 @@
   * @{
   */
 
-namespace eve
-{
+namespace eve {
 
 /** Shows a fatal error message. */
 void show_error(const char* message);

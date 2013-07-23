@@ -82,9 +82,14 @@ public:
     ptr(const ptr& rhs);
     ptr(ptr&& rhs);
     ~ptr();
-    const resource_host* host() const { return m_host; }
+    
     void load(const std::string& path);
     void force_reload() { m_resource->reload(); }
+    void reset() { reset(nullptr); }
+
+    const resource_host* host() const { return m_host; }
+    const T* get() const { return m_resource; }
+    operator bool() const { return m_resource != nullptr; }
     operator const T*() const { return m_resource; }
     const T* operator->() const { return m_resource; }
     ptr& operator=(const ptr& rhs);
@@ -131,7 +136,13 @@ private:
   /** Loads @p res, a just created instance, and inserts it in the resource library. */
   static resource* process_new(eve::unique_ptr<resource>::type res);
 
+  /** @p resource is no longer needed (no references to it). Dispose it. */
+  static void dispose(resource* resource);
+
+  /** Adds @p dependant to the list of resources dependant on this. */
   void add_dependant(resource_host* dependant);
+
+  /** Removes @p dependant from the list of resources dependant on this. */
   void remove_dependant(resource_host* dependant);
 
   eve::size m_references;

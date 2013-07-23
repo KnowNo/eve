@@ -1,0 +1,4 @@
+{
+  vertex = "vs.glsl"
+  fragment = "fs.glsl"
+}

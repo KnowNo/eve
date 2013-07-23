@@ -66,7 +66,8 @@ public:
   template<class T, typename... Args>
   T* construct(Args&&... args)
   {
-    static_assert(eve_sizeof(T) <= Size && eve_alignof(T) <= Align, "Storage size and align must be at least equal to those of type T.");
+    static_assert(eve_sizeof(T) <= Size, "Storage size must be at least equal to those of type T.");
+    static_assert(eve_alignof(T) <= Align, "Storage align must be at least equal to those of type T.");
     auto ptr = new (&m_data) T(std::forward<Args>(args)...);
     eve::memory_debugger::track(ptr, true);
     return ptr;
@@ -181,7 +182,7 @@ public:
   }
 
   /** @returns a pointer to the buffer. */
-  operator void*() 
+  operator void*()
   {
     if (exceeds())
       return dynptr();
@@ -234,7 +235,7 @@ T* align(Storage& storage)
 template <eve::size Size, eve::size Align>
 void* operator new(size_t size, eve::fixed_storage<Size, Align>& storage)
 {
-  auto ptr = storage.align(size, 8U);
+  auto ptr = storage.align(eve::size(size), 8U);
   eve::memory_debugger::track(ptr, true);
   return ptr;
 }
@@ -249,7 +250,7 @@ void operator delete(void* ptr, eve::fixed_storage<Size, Align>& storage)
 template <eve::size Size, eve::size Align>
 void* operator new(size_t size, eve::dyn_storage<Size, Align>& storage)
 {
-  auto ptr = storage.align(size, 8U);
+  auto ptr = storage.align(eve::size(size), 8U);
   eve::memory_debugger::track(ptr, true);
   return ptr;
 }

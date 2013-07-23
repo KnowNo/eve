@@ -218,4 +218,13 @@ void eve::memory_debugger::transfer(const void* from, const void* to)
   s_allocations.insert(std::make_pair(to, alloc));
 }
 
+#else
+
+namespace eve {
+
+void initialize_memory_debugger(bool){}
+void terminate_memory_debugger() {}
+
+}// eve
+
 #endif // EVE_RELEASE

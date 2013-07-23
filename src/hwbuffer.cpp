@@ -33,18 +33,20 @@
 
 using namespace eve;
 
-static const GLenum k_gl_type[] = { GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER, GL_UNIFORM_BUFFER };
+static const GLenum k_gl_buffer_type[] = { GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER, GL_UNIFORM_BUFFER };
 static const GLenum k_gl_indextype[] = { GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT };
+static const GLenum k_gl_usage[] = { GL_STATIC_DRAW, GL_DYNAMIC_DRAW, GL_STREAM_DRAW, GL_DYNAMIC_COPY };
 
-void hwbuffer::unbind(type type)
+void hwbuffer::unbind(type_t type)
 {
-  glBindBuffer(k_gl_type[size(type)], 0);
+  glBindBuffer(k_gl_buffer_type[size(type)], 0);
 }
 
-hwbuffer::hwbuffer(type type)
-  : m_type(type), m_capacity(0)
+hwbuffer::hwbuffer(type_t type)
+  : m_id(0)
+  , m_type(type)
+  , m_capacity(0)
 {
-  m_pimpl.as<GLuint>() = 0;
 }
 
 hwbuffer::~hwbuffer()
@@ -54,43 +56,42 @@ hwbuffer::~hwbuffer()
 
 void hwbuffer::create(usage usage, eve::size capacity, const void* data)
 {
-  GLuint& id = m_pimpl.as<GLuint>();
-  
-  if (id != 0)
+  if (m_id != 0)
     throw eve::system_error("Hardware buffer already created.");
 
-  glGenBuffers(1, &id);
+  glGenBuffers(1, &m_id);
 
-  if (id == 0)
+  if (m_id == 0)
     throw eve::system_error("Cannot create a new GL buffer.");
 
   m_capacity = capacity;
 
-  static const GLenum k_gl_usage[] = { GL_STATIC_DRAW, GL_DYNAMIC_DRAW, GL_STREAM_DRAW, GL_DYNAMIC_COPY };
-  glBufferData(k_gl_type[size(m_type)], m_capacity, data, k_gl_usage[size(usage)]);
+  bind();
+
+  glBufferData(k_gl_buffer_type[size(m_type)], m_capacity, data, k_gl_usage[size(usage)]);
+  
+  unbind(m_type);
 }
 
 void hwbuffer::destroy()
 {
-  GLuint& id = m_pimpl.as<GLuint>();
-  if (id != 0)
+  if (m_id != 0)
   {
-    glDeleteBuffers(1, &id);
-    id = 0;
+    glDeleteBuffers(1, &m_id);
+    m_id = 0;
   }
 }
 
 void hwbuffer::bind() const
 {
-  GLuint id = m_pimpl.as<GLuint>();
-  glBindBuffer(k_gl_type[size(m_type)], id);
+  glBindBuffer(k_gl_buffer_type[size(m_type)], m_id);
 }
 
 void hwbuffer::write(size offset, const void* data, size count)
 {
   eve_assert(offset + count <= m_capacity);
   bind();
-  glBufferSubData(k_gl_type[size(m_type)], offset, count, data);
+  glBufferSubData(k_gl_buffer_type[size(m_type)], offset, count, data);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -116,7 +117,7 @@ void hwarray::base::setup(hwbuffer* buffer, eve::size element_size, bool instanc
   setup(buffer, element_size, 0, buffer->capacity() / element_size, instanced);
 }
 
-void hwarray::base::write(const eve::size element_size, eve::size first, const void* data, const eve::size size)
+void hwarray::base::write(const eve::size element_size, const void* data, eve::size first, eve::size size)
 {
   eve_assert(first + size <= m_capacity);
   m_buffer->write(m_offset + first * element_size, data, size * element_size);
@@ -156,12 +157,7 @@ void hwarray::indices::setup(hwbuffer* buffer, type type, eve::size offset, eve:
   base::setup(buffer, k_index_type_size[eve::size(type)], offset, capacity, instanced);
 }
 
-void hwarray::indices::write(const void* data, const eve::size size)
+void hwarray::indices::write(const void* data, eve::size first, const eve::size size)
 {
-  base::write(k_index_type_size[eve::size(m_type)], 0, data, size);
-}
-
-void hwarray::indices::write(eve::size first, const void* data, const eve::size size)
-{
-  base::write(k_index_type_size[eve::size(m_type)], first, data, size);
+  base::write(k_index_type_size[eve::size(m_type)], data, first, size);
 }

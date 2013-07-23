@@ -28,6 +28,7 @@
 #include "eve/resource.h"
 #include "eve/debug.h"
 #include "eve/exceptions.h"
+#include "eve/log.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <functional>
@@ -37,8 +38,17 @@
 using namespace eve;
 
 //// STATIC RESOURCES DATA
-eve::size s_version = 0;
-std::unordered_map<std::string, eve::resource*> s_resources;
+static eve::size s_version = 0;
+static std::unordered_map<std::string, eve::resource*> s_resources;
+
+namespace eve
+{
+  /** Called by eve::application. */
+  void terminate_resources()
+  {
+    eve_assert(s_resources.size() == 0);
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -142,11 +152,17 @@ resource* resource::process_new(eve::unique_ptr<resource>::type res)
     res->m_valid = true;
   } catch (std::exception& e)
   {
-    // TODO add logging
-    std::cout << "resource loading error: " << e.what() << '\n';
+    eve::log::error("resource \"" + res->path() + "\"loading error: " + e.what());
   }
   s_resources[res->m_path] = res.get();
   return res.release();
+}
+
+void resource::dispose(resource* resource)
+{
+  s_resources.erase(resource->path());
+  resource->unload();
+  eve::destroy(resource);
 }
 
 void resource::add_dependant(resource_host* dependant)

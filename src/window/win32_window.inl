@@ -28,8 +28,11 @@
 #pragma once
 
 #include "eve/window.h"
+#include "eve/gfxdevice.h"
 #include "eve/math/detail/vec2.h"
+#include "eve/log.h"
 
+#define GLEW_STATIC
 #include <GL/glew.h>
 #include <GL/wglew.h>
 
@@ -121,7 +124,7 @@ void initialize_window()
 
   // Activate the preliminary context
   if (!wglMakeCurrent(hDC, context))
-    throw std::runtime_error("Could not acivate the preliminary opengl context.");
+    throw std::runtime_error("Could not activate the preliminary opengl context.");
 
   // Finally retrieve version of OpenGL available on this machine.
   int glmajor, glminor;
@@ -175,7 +178,7 @@ class window_impl
 public:
   eve::vec2i old_cursor;
 
-  void open(const eve::window::config& config, const char* title)
+  void open(const eve::window::config& config, const char* title, const window_impl* sharewindow)
   {
     // Calculate window dimensions
     uint16 x = (GetSystemMetrics(SM_CXSCREEN) - config.width) / 2;
@@ -279,34 +282,42 @@ public:
     int num_results = 0;
     s_window_info.wglGetPixelFormatAttribivARB_proc(m_DC, pixelformat, 0, 1, attrib, &num_results);
 
-    /*if (num_results != config.fsaa)
-      BI_LOG_WARNING(SB << "Asked for " << config.fsaa << "x fsaa, but got " << num_results << "x");*/
+    if (num_results != config.fsaa)
+      eve::log::warning("Asked for " + std::to_string(config.fsaa) + "x fsaa, but got " + std::to_string(num_results) + "x.");
 
     PIXELFORMATDESCRIPTOR pfd;
     if (!SetPixelFormat(m_DC, pixelformat, &pfd))
       throw std::runtime_error("Failed to set the pixel format.");
 
-    // Prepare the attributes used for creating the GL context
-    GLint attribs[] = { WGL_CONTEXT_MAJOR_VERSION_ARB, config.glmajor,
-                        WGL_CONTEXT_MINOR_VERSION_ARB, config.glminor,
-                        WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-                        WGL_CONTEXT_FLAGS_ARB,
-                        #ifndef EVE_RELEASE
-                        WGL_CONTEXT_DEBUG_BIT_ARB,
-                        #else
-                        0,
-                        #endif
-                        0};
+    /* Create the GL context */
+    {
+      // Prepare the attributes used for creating the GL context
+      GLint attribs[] = { WGL_CONTEXT_MAJOR_VERSION_ARB, config.glmajor,
+                          WGL_CONTEXT_MINOR_VERSION_ARB, config.glminor,
+                          WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+                          WGL_CONTEXT_FLAGS_ARB,
+                          #ifndef BISMUTH_RELEASE
+                          WGL_CONTEXT_DEBUG_BIT_ARB,
+                          #else
+                          0,
+                          #endif
+                          0};
 
-    m_context = s_window_info.wglCreateContextAttribsARB_proc(m_DC, 0, attribs);
-    if (!m_context)
-      throw std::runtime_error("Could not create the OpenGL context.");
+      HGLRC shareglcontextHGLRC = sharewindow ? sharewindow->m_context : 0;
+      m_context = s_window_info.wglCreateContextAttribsARB_proc(m_DC, shareglcontextHGLRC, attribs);
+      if (!m_context)
+        throw std::runtime_error("Could not create the OpenGL context.");
     
-    if (!wglMakeCurrent(m_DC, m_context))
-      throw std::runtime_error("Could not acivate the OpenGL context.");
+      if (!wglMakeCurrent(m_DC, m_context))
+        throw std::runtime_error("Could not acivate the OpenGL context.");
 
-    if (config.vsync)
-      s_window_info.wglSwapIntervalEXT_proc(1);
+      if (config.vsync)
+        s_window_info.wglSwapIntervalEXT_proc(1);
+
+      glewExperimental = GL_TRUE; 
+      if (glewInit() != GLEW_OK)
+        throw std::runtime_error("Failed to initialize GL extensions.");
+    }
 
     ShowWindow(m_handle, SW_SHOW);
     SetForegroundWindow(m_handle);
@@ -327,9 +338,6 @@ public:
     RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
 
     SetWindowLongPtr(m_handle, GWLP_USERDATA, 0);
-
-    if (glewInit() != GLEW_OK)
-      throw std::runtime_error("Failed to initialize GL extensions.");
 
     m_flags.set(flags::open);
     m_flags.set(flags::fullscreen, config.fullscreen);
@@ -378,17 +386,18 @@ public:
     if (cursor_hidden())
       hide_system_cursor(false);
 
-    if (m_context)
-    {
-      wglMakeCurrent(nullptr, nullptr);
-      wglDeleteContext(m_context);
-      m_context = nullptr;
-    }
+    wglMakeCurrent(nullptr, nullptr);
 
     if(m_DC)
     {
       ReleaseDC(m_handle, m_DC);
       m_DC = nullptr;
+    }
+
+    if (m_context)
+    {
+      wglDeleteContext(m_context);
+      m_context = nullptr;
     }
 
     if (m_handle)
@@ -786,6 +795,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam)
     case WM_EXITSIZEMOVE:
       e->type = window::event::SIZE;
       break;
+
 
     default: break;
   }

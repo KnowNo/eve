@@ -65,8 +65,7 @@
 #  define eve_inline inline
 #endif
 
-namespace eve
-{
+namespace eve {
 
 // Real type definition (change this to suit your needs).
 typedef float real;
@@ -101,7 +100,6 @@ enum class arithmetic_type
 
 /** Returns the size of @p type arithmetic type. */
 size arithmetic_type_size(arithmetic_type type);
-
 
 //// Utils
 

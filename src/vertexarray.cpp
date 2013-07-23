@@ -42,11 +42,11 @@ void vertexarray::unbind()
 }
 
 vertexarray::vertexarray()
-  : m_indices(nullptr)
+  : m_id(0)
+  , m_indices(nullptr)
 {
-  GLuint& id = m_pimpl.as<GLuint>();
-  glGenVertexArrays(1, &id);
-  if (id == 0)
+  glGenVertexArrays(1, &m_id);
+  if (m_id == 0)
     throw eve::system_error("Cannot create the vertex array.");
 }
 
@@ -62,11 +62,10 @@ void vertexarray::attach(hwarray::indices* indices)
 
 void vertexarray::destroy()
 {
-  GLuint& id = m_pimpl.as<GLuint>();
-  if (id != 0)
+  if (m_id != 0)
   {
-    glDeleteVertexArrays(0, &id);
-    id = 0;
+    glDeleteVertexArrays(0, &m_id);
+    m_id = 0;
   }
 }
 
@@ -109,36 +108,40 @@ void vertexarray::draw(primitive_type primitive, size first, size count) const
       nullptr
     );
     
-    hwbuffer::unbind(hwbuffer::type::INDEX);
+    hwbuffer::unbind(hwbuffer::type::index);
   
   } else
-    glDrawArrays(k_gl_primitives[size(primitive)], first, count);
+    glDrawArrays(k_gl_primitives[int(primitive)], first, count);
   
   unbind();
 }
 
 void vertexarray::bind() const
 {
-  glBindVertexArray(m_pimpl.as<GLuint>());
+  glBindVertexArray(m_id);
 }
 
-void vertexarray::do_attach(size location, size stride, const eve::vertex_component* components)
+void vertexarray::do_attach(const hwbuffer* buffer, size location, size stride, const eve::vertex_component* components)
 {
-  static const GLenum k_gl_type[] = 
+  static const GLenum k_gl_primitives[] = 
   {
     GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT, GL_UNSIGNED_INT, 0, 0, GL_FLOAT, GL_DOUBLE
   };
 
-  size index = 0;
-  size offset = 0;
+  bind();
+  buffer->bind();
+
+  eve::size index = 0;
+  eve::size offset = 0;
 
   while (components[index].count != 0)
   {
+    glVertexAttribPointer(location, components[index].count, k_gl_primitives[size(components[index].type)], false, stride, (const void*)offset);
     glEnableVertexAttribArray(location);
-    glVertexAttribPointer(location, components[index].count, k_gl_type[size(components[index].type)], false, stride, (const void*)offset);
     offset += components[index].count * eve::arithmetic_type_size(components[index].type);
     ++location;
     ++index;
   }
-}
 
+  unbind();
+}

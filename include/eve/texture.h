@@ -129,7 +129,7 @@ private:
   void set_filters();
   void set_clampmode();  
 
-  fixed_storage<eve_sizeof(void*), eve_alignof(void*)> m_pimpl;
+  eve::id m_id;
   type_t m_type;
   vec3u m_size;
   typeformat_t m_typeformat;

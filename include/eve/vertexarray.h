@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include "gfxdevice.h"
 #include "vertex.h"
 #include "storage.h"
 
@@ -36,11 +37,7 @@
 
 namespace eve {
 
-// TODO move this somewhere else
-enum class primitive_type
-{
-  POINTS, LINES, LINE_LOOP, TRIANGLES, TRIANGLE_STRIP
-};
+class hwbuffer;
 
 // Forward declarations
 namespace hwarray {
@@ -63,9 +60,7 @@ public:
   template <typename T>
   void attach(eve::size location, hwarray::vertices<T>* vertices)
   {
-    bind();
-    vertices->buffer()->bind();
-    do_attach(location, eve_sizeof(T), eve::vertex_info<T>::components);
+    do_attach(vertices->buffer(), location, eve_sizeof(T), eve::vertex_info<T>::components);
   }
 
   void destroy();
@@ -75,10 +70,10 @@ public:
 
 private:
   void bind() const;
-  void do_attach(size location, size stride, const eve::vertex_component* components);
+  void do_attach(const hwbuffer* buffer, size location, size stride, const eve::vertex_component* components);
 
+  eve::id m_id;
   hwarray::indices* m_indices;
-  fixed_storage<eve_sizeof(void*), eve_alignof(void*)> m_pimpl;
 };
 
 } // eve

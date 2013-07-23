@@ -39,6 +39,7 @@
 
 namespace eve {
 
+/** Class used for opening a native window for rendering. */
 class window : uncopyable
 {
 public:
@@ -98,8 +99,9 @@ public:
       not open yet. */
   void title(const std::string& title);
 
-  /** Opens the window using configuration file at eve::config::path.  */
-  void open();
+  /** Opens the window using configuration file at eve::config::path.
+      @param sharewindow if not null, its GL context will be shared with the this window new context. */
+  void open(eve::window* sharewindow = nullptr);
 
   /** Pops a window event into @p e from the queue. 
       @returns whether or not an event has occurred. */

@@ -26,6 +26,7 @@
 \******************************************************************************/
 
 #include "eve/window.h"
+#include "eve/gfxdevice.h"
 #include "eve/allocator.h"
 #include "eve/utils.h"
 
@@ -96,9 +97,10 @@ void window::title(const std::string& title)
   }
 }
 
-void window::open()
+void window::open(eve::window* sharewindow)
 {
-  m_pimpl.as<window_impl>().open(m_config, m_title.c_str());
+  auto share_window_impl = sharewindow ? &sharewindow->m_pimpl.as<window_impl>() : nullptr;
+  m_pimpl.as<window_impl>().open(m_config, m_title.c_str(), share_window_impl);
   m_width = m_config.width;
   m_height = m_config.height;
 }

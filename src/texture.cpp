@@ -29,6 +29,9 @@
 #include "eve/pixelbuffer.h"
 #include "eve/storage.h"
 
+#define GLEW_STATIC
+#include "gl/glew.h"
+
 using namespace eve;
 
 eve_define_enum(eve::texture::type_t,
@@ -62,8 +65,21 @@ eve_define_serializable_named(eve::texture,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+static const GLint k_gl_type[] = { GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_RECTANGLE, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BUFFER };
+static const GLint k_gl_internal_format[][4] = {
+  /* UNSIGNED_BYTE */ {GL_R8, GL_RG8, GL_RGB8, GL_RGBA8},
+  /* half_float */    {GL_R16F, GL_RG16F, GL_RGB16F, GL_RGBA16F},
+  /* FLOAT */         {GL_R32F, GL_RG32F, GL_RGB16F, GL_RGBA16F}
+};
+static const GLenum k_gl_pixelformat[] = { GL_RED, GL_RG, GL_RGB, GL_RGBA };
+static const GLenum k_gl_typeformat[] = { GL_UNSIGNED_BYTE, GL_FLOAT, GL_FLOAT };
+static const GLint k_gl_wrapmode[] = { GL_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 texture::texture()
-  : m_type(type_t::tex2D)
+  : m_id(0)
+  , m_type(type_t::tex2D)
   , m_typeformat(typeformat_t::unsigned_byte)
   , m_channels(channels_t::triple)
   , m_filtermode(filtermode_t::linear)
@@ -71,11 +87,11 @@ texture::texture()
   , m_mipmapped(false)
   , m_pixelbuffer((eve::resource_host*)this)
 {
-  init_id();
 }
 
 texture::texture(typeformat_t format, channels_t channels)
-  : m_type(type_t::tex2D)
+  : m_id(0)
+  , m_type(type_t::tex2D)
   , m_typeformat(format)
   , m_channels(channels)
   , m_filtermode(filtermode_t::linear)
@@ -87,7 +103,8 @@ texture::texture(typeformat_t format, channels_t channels)
 }
 
 texture::texture(const vec2u& size, unsigned depth, type_t type, typeformat_t format, channels_t channels, filtermode_t filtermode, wrapmode_t wrapmode, bool mipmap)
-  : m_pixelbuffer((eve::resource_host*)this)
+  : m_id(0)
+  , m_pixelbuffer((eve::resource_host*)this)
 {
   init_id();
   create(type, size, depth, format, channels, filtermode, wrapmode, mipmap);
@@ -231,3 +248,163 @@ void texture::setup(type_t type, const vec2u& size, unsigned depth, typeformat_t
   if (!created())
     create_id();
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void texture::unbind(type_t type)
+{
+  glBindTexture(k_gl_type[(unsigned)type], 0);
+}
+
+void texture::bind(unsigned unit) const
+{
+  glActiveTexture(GL_TEXTURE0 + unit);
+  glBindTexture(k_gl_type[static_cast<unsigned>(m_type)], m_id);
+}
+
+void texture::destroy()
+{
+  glDeleteTextures(1, &m_id);
+  m_id = 0;
+}
+
+void texture::init_id()
+{
+  m_id = 0;
+}
+
+bool texture::created() const
+{ 
+  return m_id != 0; 
+}
+
+void texture::create_id()
+{
+  glGenTextures(1, &m_id);
+}
+
+void texture::write(const void* data)
+{
+  GLenum typeFormat = k_gl_typeformat[static_cast<unsigned>(m_typeformat)];
+  if(!data && (m_typeformat == typeformat::half_float))
+    typeFormat = GL_FLOAT;
+  switch (m_type)
+  {
+  case type::tex2D:
+  case type::rectangle:
+    glTexImage2D(
+      k_gl_type[int(m_type)], // target
+      0,             // level
+      k_gl_internal_format[int(m_typeformat)][int(m_channels)], // internalFormat
+      width(), height(), 0, // width, height, border
+      k_gl_pixelformat[static_cast<unsigned>(m_channels)],
+      typeFormat,
+      data);
+    break;
+
+  case type::tex3D:
+  case type::array2D:
+    glTexImage3D(
+      k_gl_type[int(m_type)], // target
+      0,             // level
+      k_gl_internal_format[int(m_typeformat)][int(m_channels)], // internalFormat
+      width(), height(), depth(), 0, // width, height, depth, border
+      k_gl_pixelformat[static_cast<unsigned>(m_channels)],
+      typeFormat,
+      data);
+    break;
+
+  default:
+    eve_internal_error;
+  }
+
+  if (m_mipmapped)
+    glGenerateMipmap(k_gl_type[int(m_type)]);
+}
+
+void texture::subwrite(unsigned depth, const void* data)
+{
+  GLenum typeFormat = k_gl_typeformat[static_cast<unsigned>(m_typeformat)];
+  if(!data && (m_typeformat == texture::typeformat::half_float))
+    typeFormat = GL_FLOAT;
+  switch (m_type)
+  {
+  case type::tex2D:
+  case type::rectangle:
+    glTexSubImage2D(
+      k_gl_type[int(m_type)], // target
+      0, 0, 0, // level, xoffset, yoffset
+      width(), height(), // width, height
+      k_gl_pixelformat[static_cast<unsigned>(m_channels)],
+      typeFormat,
+      data);
+    break;
+
+  case type::tex3D:
+  case type::array2D:
+    glTexSubImage3D(
+      k_gl_type[int(m_type)], // target
+      0, 0, 0, // level, xoffset, yoffset
+      depth,
+      width(), height(), 1, // width, height, depth
+      k_gl_pixelformat[static_cast<unsigned>(m_channels)],
+      typeFormat,
+      data);
+    break;
+
+  default:
+    eve_internal_error;
+  }
+
+  if (m_mipmapped)
+    glGenerateMipmap(k_gl_type[int(m_type)]);
+}
+
+void texture::set_filters()
+{
+  GLint minFilterID = 0;
+  GLint magFilterID =  m_filtermode == filtermode::nearest ? GL_NEAREST : GL_LINEAR;
+  if (m_mipmapped)
+  {
+    if (m_filtermode == filtermode::nearest)
+      minFilterID = GL_NEAREST_MIPMAP_NEAREST;
+    else
+      minFilterID = GL_LINEAR_MIPMAP_LINEAR;
+  } else
+    if (m_filtermode == filtermode::nearest)
+      minFilterID = GL_NEAREST;
+    else
+      minFilterID = GL_LINEAR;
+
+  GLint textureType = k_gl_type[static_cast<unsigned>(m_type)];
+  glTexParameteri(textureType, GL_TEXTURE_MIN_FILTER, minFilterID);
+  glTexParameteri(textureType, GL_TEXTURE_MAG_FILTER, magFilterID);
+
+#ifdef GLEW_EXT_texture_filter_anisotropic
+  //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, mpDevice->getMaxAnisotropic());
+#endif
+}
+
+void texture::set_clampmode()
+{
+  GLint textureType = k_gl_type[static_cast<unsigned>(m_type)];
+  GLint wrapMode = k_gl_wrapmode[static_cast<unsigned>(m_wrapmode)];
+  glTexParameteri(textureType, GL_TEXTURE_WRAP_S, wrapMode);
+  glTexParameteri(textureType, GL_TEXTURE_WRAP_T, wrapMode);
+}
+
+//void texture::setBorderColor(const Colorf& color) const
+//{
+//  GLint textureType = k_gl_type[static_cast<unsigned>(m_type)];
+//  glBindTexture(textureType, 0);
+//  glTexParameterfv(k_gl_type[static_cast<unsigned>(m_type)], GL_TEXTURE_BORDER_COLOR, color);
+//  glBindTexture(textureType, 0);
+//}
+
+
+//void texture::setBuffer(unsigned id)
+//{
+//  activate();
+//  glTexBuffer(GL_TEXTURE_BUFFER, k_gl_internal_format[int(mTypeFormat)][int(mChannels)], id);
+//  unbind(m_type);
+//}

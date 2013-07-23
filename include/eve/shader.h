@@ -25,45 +25,92 @@
 * THE SOFTWARE.                                                                *
 \******************************************************************************/
 
-#include "eve/application.h"
-#include "eve/resource.h"
+#pragma once
 
-using namespace eve;
+#include "text.h"
+#include "storage.h"
 
 namespace eve {
 
-extern void initialize_platform();
+class shader : public eve::deserializable_resource<shader>
+{
+public:
+  typedef eve::resource::ptr<shader> ptr;
 
-extern void initialize_memory_debugger(bool enabled);
-extern void terminate_memory_debugger();
+  class stage : public eve::text
+  {
+  public:
+    typedef enum class type
+    {
+      vertex = 0,
+      tess_control,
+      tess_evaluation,
+      geometry,
+      fragment
+    } type_t;
+    
+    typedef eve::resource::ptr<stage, type_t> ptr;
 
-extern void initialize_window();
-extern void terminate_window();
+    stage(type type);
+    ~stage();
 
-extern void initialize_net();
-extern void terminate_net();
+    type type() const { return m_type; }
 
-extern void terminate_resources();
+    void load(std::istream& source) override;
+    void unload() override;
+
+  protected:
+    void on_reload() override;
+
+  private:
+    void compile();
+
+    id m_id;
+    type_t m_type;
+    friend class shader;
+  };
+
+public:
+  shader();
+  ~shader();
+
+  void load(std::istream& source) override;
+  void unload() override;
+
+  void bind() const;
+  void uniform(const std::string& name, float value);
+  
+protected:
+  void on_reload() override;
+
+private:
+  void save_stages(eve_out const stage** stages) const;
+  void attach(const stage* stage);
+  void detach(const stage* stage);
+  void link();
+
+  struct location
+  {
+    eve::id id;
+    eve::id type;
+    location() : id(0), type(0) { }
+    location(eve::id id, eve::id type)
+      : id(id), type(type) { }
+  };
+
+  eve::id m_id;
+  std::unordered_map<std::string, location> m_attributes;
+  std::unordered_map<std::string, location> m_uniforms;
+  stage::ptr m_vertex;
+  stage::ptr m_tesscontrol;
+  stage::ptr m_tesseval;
+  stage::ptr m_geometry;
+  stage::ptr m_fragment;
+  static const size k_stages = 5;
+
+public:
+  eve_declare_serializable
+};
 
 } // eve
 
-application::application(eve::flagset<application::module> modules)
-  : m_modules(modules)
-{
-  initialize_platform();
-  initialize_memory_debugger(modules.isset(module::memory_debugger));
-  if (modules.isset(module::graphics))
-    initialize_window();
-  if (modules.isset(module::networking))
-    initialize_net();
-}
-
-application::~application()
-{
-  eve::terminate_resources();
-  if (m_modules.isset(module::networking))
-    terminate_net();
-  if (m_modules.isset(module::graphics))
-    terminate_window();
-  eve::terminate_memory_debugger();
-}

@@ -33,6 +33,7 @@
 #include <eve/vertexarray.h>
 #include <eve/time.h>
 #include <eve/texture.h>
+#include <eve/shader.h>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -83,6 +84,8 @@ TEST(Application, window)
   eve::application app(eve::application::module::graphics | eve::application::module::memory_debugger);
 
   eve::window::config c;
+  eve::window::config::glmajor = 3;
+  eve::window::config::glminor = 3;
   c.width = 800;
   c.height = 400;
 
@@ -91,22 +94,31 @@ TEST(Application, window)
   window.configure(c);
   window.open();
 
-  eve::hwbuffer buff(eve::hwbuffer::type::VERTEX);
+  eve::shader::ptr shader;
+  shader.load("data/sample.fx.evedat");
+  shader->bind();
+
 
   const eve::vec2 triangle[] =
   {
-    eve::vec2(0.f, 0.f),
-    eve::vec2(1.0f, 0.0f),
-    eve::vec2(0.f, 1.0f)
+    eve::vec2(-0.3f, 0.5f),
+    eve::vec2(-0.8f, -0.5f),
+    eve::vec2(0.2f, -0.5f)
   };
 
-  glEnableClientState(GL_VERTEX_ARRAY);
-  
-  eve::resource::ptr<eve::texture> tex;
 
-  tex.load("data/ball.evedat");
-  tex->bind(0);
-  glEnable(GL_TEXTURE_2D);
+  eve::hwbuffer buff(eve::hwbuffer::type::vertex);
+  buff.create(eve::hwbuffer::usage::static_draw, eve_sizeof(triangle));
+  
+  eve::hwarray::vertices<eve::vec2> vertices(&buff);
+  vertices.write(triangle, 0, 3);
+
+  eve::vertexarray vao;
+  vao.attach(0, &vertices);
+
+  glClearColor(0.2f,0.3f,0.4f,1.0f);
+
+  eve::resource::ptr<eve::texture> tex;
 
   eve::window::event e;
   eve::stopwatch sw;
@@ -117,28 +129,16 @@ TEST(Application, window)
     {
       if (e.type == e.QUIT)
         return;
+      if (e.type == e.SIZE)
+      {
+        glViewport(0, 0, window.width(), window.height());
+      }
     }
     window.activate();
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glViewport(0, 0, window.width(), window.height());
-
-    glColor3f(1,1,1);
-    //glVertexPointer(2, GL_FLOAT, sizeof (float) * 2, triangle);
-    //glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    glBegin(GL_QUADS);
-
-      glTexCoord2f(0, 0);
-      glVertex2f(0, 0);
-      glTexCoord2f(1, 0);
-      glVertex2f(1, 0);
-      glTexCoord2f(1, 1);
-      glVertex2f(1, 1);
-      glTexCoord2f(0, 1);
-      glVertex2f(0, 1);
-
-    glEnd();
-
+    vao.draw(eve::primitive_type::triangles, 0, 3);
 
     eve::time::fps_wait((float)sw.elapsed(), 60);
     if (fps.tick())

@@ -28,6 +28,7 @@
 #pragma once
 
 namespace eve {
+
 namespace hwarray {
 
 template <typename VertexType>
@@ -61,16 +62,10 @@ void vertices<VertexType>::setup(hwbuffer* buffer, eve::size offset, eve::size c
 }
 
 template <typename VertexType>
-void write(const VertexType* data, const eve::size size)
+void vertices<VertexType>::write(const VertexType* data, eve::size first, eve::size size)
 {
-  base::write(eve_sizeof(VertexType), 0, data, size);
+  base::write(eve_sizeof(VertexType), data, first, size);
 }
 
-template <typename VertexType>
-void write(eve::size first, const VertexType* data, const eve::size size)
-{
-  base::write(eve_sizeof(VertexType), first, data, size);
-}
-
-} // eve
 } // hwarray
+} // eve

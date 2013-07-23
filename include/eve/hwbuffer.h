@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include "vertex.h"
+#include "gfxdevice.h"
 #include "storage.h"
 #include "uncopyable.h"
 
@@ -39,14 +41,14 @@ namespace eve {
 class hwbuffer : eve::uncopyable
 {
 public:
-  enum class type
+  typedef enum class type
   {
-    INDEX, VERTEX, UNIFORM
-  };
+    index, vertex, uniform
+  } type_t;
 
   enum class usage
   {
-    STATIC_DRAW, DYNAMIC_DRAW, STREAM_DRAW, DYNAMIC_COPY
+    static_draw, dynamic_draw, stream_draw, dynamic_copy
   };
 
   /** Makes no buffer of type @p type in use. */
@@ -55,7 +57,7 @@ public:
   hwbuffer(type type);
   ~hwbuffer();
 
-  type get_type() const { return m_type; }
+  type_t type() const { return m_type; }
   eve::size capacity() const { return m_capacity; }
 
   void create(usage usage, eve::size capacity, const void* data = nullptr);
@@ -69,9 +71,9 @@ public:
   void write(size offset, const void* data, size count);
 
 private:
-  type m_type;
+  eve::id m_id;
+  type_t m_type;
   eve::size m_capacity;
-  fixed_storage<eve_sizeof(void*), eve_alignof(void*)> m_pimpl;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +96,7 @@ public:
 protected:
   void setup(hwbuffer* buffer, eve::size element_size, eve::size offset, eve::size capacity, bool instanced);
   void setup(hwbuffer* buffer, eve::size element_size, bool instanced);
-  void write(const eve::size element_size, eve::size first, const void* data, const eve::size size);
+  void write(const eve::size element_size, const void* data, eve::size first, eve::size size);
 
 private:
   hwbuffer* m_buffer;
@@ -123,8 +125,7 @@ public:
   void setup(hwbuffer* buffer, type type, bool instanced = false);
   void setup(hwbuffer* buffer, type type, eve::size offset, eve::size capacity, bool instanced = false);
 
-  void write(const void* data, const eve::size size);
-  void write(eve::size first, const void* data, const eve::size size);
+  void write(const void* data, eve::size first, eve::size size);
 
 private:
   type m_type;
@@ -143,8 +144,7 @@ public:
   void setup(hwbuffer* buffer, bool instanced = false);
   void setup(hwbuffer* buffer, eve::size offset, eve::size capacity, bool instanced = false);
 
-  void write(const VertexType* data, const eve::size size);
-  void write(eve::size first, const VertexType* data, const eve::size size);
+  void write(const VertexType* data, eve::size first, eve::size size);
 };
 
 } // hwarray

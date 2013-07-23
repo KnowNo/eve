@@ -169,6 +169,15 @@ struct global_deleter
   }
 };
 
+template <class T>
+struct global_deleter<T[]>
+{
+  void operator()(T* ptr) const
+  {
+    destroy_array(ptr);
+  }
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
