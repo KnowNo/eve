@@ -63,22 +63,22 @@ public:
 class resource : public resource_host
 {
 public:
-  template <class T, class Param = void>
+  template <class T, class Param = nulltype>
   struct helper
   {
     Param param;
-    helper(Param&& param) : param(param) { }
+    helper(const Param& param) : param(param) { }
     T* create_resource();
   };
 
-  template <class T, class Param = void>
+  template <class T, class Param = nulltype>
   class ptr
   {
   public:
-    template<class... Args>
-    ptr(Args&&... param);
-    template<class... Args>
-    ptr(resource_host* host, Args&&... param);
+    ptr();
+    ptr(resource_host* host);
+    ptr(const Param& param);
+    ptr(resource_host* host, const Param& param);
     ptr(const ptr& rhs);
     ptr(ptr&& rhs);
     ~ptr();
@@ -138,6 +138,8 @@ private:
   bool m_valid;
   std::string m_path;
   std::vector<resource_host*> m_dependants;
+
+  template <class, class> friend class ptr;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

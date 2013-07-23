@@ -31,19 +31,30 @@
 
 namespace eve {
 
-template <class T, class Param> template<class... Args>
-resource::ptr<T, Param>::ptr(Args&&... args)
-  : m_host(nullptr)
-  , m_resource(nullptr)
-  , m_helper(std::forward<Args>(args)...)
+template <class T, class Param>
+resource::ptr<T, Param>::ptr()
+  : ptr(nullptr)
 {
 }
 
-template <class T, class Param> template<class... Args>
-resource::ptr<T, Param>::ptr(resource_host* host, Args&&... args)
+template <class T, class Param>
+resource::ptr<T, Param>::ptr(resource_host* host)
   : m_host(host)
   , m_resource(nullptr)
-  , m_helper(std::forward<Args>(args)...)
+{
+}
+
+template <class T, class Param>
+resource::ptr<T, Param>::ptr(const Param& param)
+  : ptr(nullptr, param)
+{
+}
+
+template <class T, class Param>
+resource::ptr<T, Param>::ptr(resource_host* host, const Param& param)
+  : m_host(host)
+  , m_resource(nullptr)
+  , m_helper(param)
 {
 }
 
@@ -130,7 +141,7 @@ T* resource::helper<T, Param>::create_resource()
 }
 
 template<class T>
-struct resource::helper<T, void>
+struct resource::helper<T, nulltype>
 {
   T* create_resource()
   {

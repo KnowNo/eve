@@ -30,6 +30,9 @@
 #include "macro.h"
 #include <type_traits>
 
+/** Used in meta-programming. */
+struct nulltype { };
+
 #define eve_gen_has_member_func(ret_type, args, member_func)\
   template <typename T>\
   class has_##member_func\
