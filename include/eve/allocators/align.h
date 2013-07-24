@@ -42,6 +42,7 @@ namespace eve {
  ** impossible (i.e. the buffer is too small), align does nothing and returns
  ** nullptr. */
 void* align(eve::size align, eve::size size, void* ptr, eve::size& space);
+const void* align(eve::size align, eve::size size, const void* ptr, eve::size& space);
 
 } // eve
 

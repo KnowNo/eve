@@ -81,7 +81,7 @@ TEST(Lib, storage)
   EXPECT_EQ(32, sizeof(data16));
 
 
-  auto foo = eve::storage::create<Foo>(data16, 42);
+  auto foo = new (data16) Foo(42);
   EXPECT_EQ(42, foo->value);
   eve::destruct(foo);
 
@@ -95,7 +95,7 @@ TEST(Lib, storage)
     ~Bar() { }
   };
 
-  auto bar = eve::storage::create<Bar>(dynstorage, 42);
+  auto bar = new (dynstorage) Bar(42);
   EXPECT_EQ(42, bar->value);
   EXPECT_TRUE(dynstorage.exceeds());
   eve::destruct(bar);

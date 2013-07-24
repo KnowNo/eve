@@ -29,6 +29,11 @@
 
 void* eve::align(eve::size align, eve::size size, void* ptr, eve::size& space)
 {
+  return const_cast<void*>(eve::align(align, size, static_cast<const void*>(ptr), space));
+}
+
+const void* eve::align(eve::size align, eve::size size, const void* ptr, eve::size& space)
+{
   eve::size offset = (eve::size)((eve::uintptr)ptr & (align - 1));
   
   if (offset > 0)

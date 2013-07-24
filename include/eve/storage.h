@@ -80,6 +80,24 @@ public:
   template<class T>
   const T& as() const { return *reinterpret_cast<const T*>(&m_data); }
 
+  /** @returns a pointer within this storage with specified alignment @p align point to
+      a block of memory of a least @p size large. */
+  void* align(eve::size size, eve::size align = 8U)
+  {
+    return const_cast<void*>(static_cast<const fixed_storage*>(this)->align(size, align));
+  }
+
+  /** @returns a pointer within this storage with specified alignment @p align point to
+      a block of memory of a least @p size large.
+      @note if not enough room, assertion is called. */
+  const void* align(eve::size size, eve::size align = 8U) const
+  {
+    eve::size space = size;
+    const void* ptr = eve::align(align, size, (const void*)(*this), space);
+    eve_assert(space <= Size);
+    return ptr;
+  }
+
   /** @returns a pointer to the buffer. */
   operator void*() {return &m_data; }
 
@@ -136,6 +154,32 @@ public:
     return true;
   }
 
+  /** @returns a pointer within this storage with specified alignment @p align point to
+      a block of memory of a least @p size large.
+      @note this function may need to call reserve() to make more room. */
+  void* align(eve::size size, eve::size align = 8U)
+  {
+    void* ptr;
+    eve::size space = size;
+    do
+    {
+      ptr = (void*)*this;
+      ptr = eve::align(align, size, ptr, space);
+    } while (reserve(space));
+    return ptr;
+  }
+
+  /** @returns a pointer within this storage with specified alignment @p align point to
+      a block of memory of a least @p size large.
+      @note if not enough room, assertion is called. */
+  const void* align(eve::size size, eve::size align = 8U) const
+  {
+    eve::size space = size;
+    const void* ptr = eve::align(align, size, (const void*)(*this), space);
+    eve_assert(space <= m_size);
+    return ptr;
+  }
+
   /** @returns a pointer to the buffer. */
   operator void*() 
   {
@@ -168,69 +212,20 @@ private:
 
 namespace storage {
 
-/** TODO add doc */
-template <class T, class Storage, typename... Args>
-T* create(Storage& storage, Args&&... args)
+/** @returns a T pointer inside of @p storage with correct T alignment. */
+template <class T, class Storage>
+const T* align(const Storage& storage)
 {
-  void* ptr;
-  eve::size space = eve_sizeof(T);
-  do
-  {
-    ptr = (void*)storage;
-    ptr = eve::align(eve_alignof(T), eve_sizeof(T), ptr, space);
-  } while (storage.reserve(space));
-  return eve_inplace_new(ptr) T(std::forward<Args>(args)...);
+  return storage.align(eve_sizeof(T), eve_alignof(T));
 }
 
-template <class T>
-class unique_ptr : uncopyable
+/** @returns a T pointer inside of @p storage with correct T alignment.
+    @note if current storage space is not enough, reserve() will be called to make enough room. */
+template <class T, class Storage>
+T* align(Storage& storage)
 {
-public:
-  unique_ptr(T* object = nullptr)
-    : m_object(object)
-  {
-  }
-
-  ~unique_ptr()
-  {
-    reset();
-  }
-  
-  unique_ptr(unique_ptr&& rhs)
-    : m_object(rhs.m_object)
-  {
-    rhs.m_object;
-  }
-
-  void reset(T* other = nullptr)
-  {
-    if (m_object)
-      m_object->~T();
-    m_object = other;
-  }
-
-  T* release()
-  {
-    auto temp = m_object;
-    m_object = nullptr;
-    return temp;
-  }
-
-  operator T*() { return m_object; }
-  operator const T*() const { return m_object; }
-  T* operator->() { return m_object; }
-  const T* operator->() const { return m_object; }
-
-  unique_ptr& operator=(unique_ptr&& rhs)
-  {
-    reset(rhs.m_object);
-    rhs.m_object = nullptr;
-    return *this;
-  }
-
-private:
-  T* m_object;
-};
+  return storage.align(eve_sizeof(T), eve_alignof(T));
+}
 
 } // storage
 
@@ -239,9 +234,7 @@ private:
 template <eve::size Size, eve::size Align>
 void* operator new(size_t size, eve::fixed_storage<Size, Align>& storage)
 {
-  eve::size space = eve::size(size);
-  void* ptr = eve::align(8U, eve::size(size), (void*)storage, space);
-  storage.reserve(space);
+  auto ptr = storage.align(size, 8U);
   eve::memory_debugger::track(ptr, true);
   return ptr;
 }
@@ -256,13 +249,7 @@ void operator delete(void* ptr, eve::fixed_storage<Size, Align>& storage)
 template <eve::size Size, eve::size Align>
 void* operator new(size_t size, eve::dyn_storage<Size, Align>& storage)
 {
-  void* ptr;
-  eve::size space = eve::size(size);
-  do
-  {
-    ptr = (void*)storage;
-    ptr = eve::align(8U, eve::size(size), ptr, space);
-  } while (storage.reserve(space));
+  auto ptr = storage.align(size, 8U);
   eve::memory_debugger::track(ptr, true);
   return ptr;
 }
